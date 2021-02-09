@@ -20,10 +20,6 @@ namespace TokenGenerator
         public ActionResult Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest req)
         {
             var rh = new RequestHelper(req);
-            if (!rh.Authorize(out ActionResult authorizeResult))
-            {
-                return authorizeResult;
-            }
 
             rh.ValidateQueryParam("scopes", true, TokenHelper.TryParseScopes, out string[] scopes);
             rh.ValidateQueryParam("org", true, TokenHelper.IsValidIdentifier, out string org);
