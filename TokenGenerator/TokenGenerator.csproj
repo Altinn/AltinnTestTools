@@ -13,8 +13,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Update="appsettings.json">
-      <Generator>MSDataSetGenerator</Generator>
-      <LastGenOutput>appsettings.Designer.cs</LastGenOutput>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="certs\apitoken.pfx">

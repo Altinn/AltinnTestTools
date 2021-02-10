@@ -7,6 +7,7 @@ namespace TokenGenerator
     public class Settings
     {
         public string KeyVaultName { get; set; }
-        public string TokenSigningCertName { get; set; }
+        public string ApiTokenSigningCertName { get; set; }
+        public string ConsentTokenSigningCertName { get; set; }
     }
 }

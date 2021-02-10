@@ -3,44 +3,47 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
-using TokenGenerator.Helpers;
+using TokenGenerator.Services;
+using System.Threading.Tasks;
 
 namespace TokenGenerator
 {
     public class GetPersonalToken
     {
-        private readonly Settings config;
+        private readonly Settings settings;
+        private readonly IToken tokenHelper;
+        private readonly IRequestValidator requestValidator;
 
-        public GetPersonalToken(IOptions<Settings> configurationItems)
+        public GetPersonalToken(IOptions<Settings> settings, IToken tokenHelper, IRequestValidator requestValidator)
         {
-            config = configurationItems.Value;
+            this.settings = settings.Value;
+            this.tokenHelper = tokenHelper;
+            this.requestValidator = requestValidator;
         }
 
         [FunctionName(nameof(GetPersonalToken))]
-        public ActionResult Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest req)
+        public async Task<ActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest req)
         {
-            var rh = new RequestHelper(req);
+            requestValidator.ValidateQueryParam("scopes", true, tokenHelper.TryParseScopes, out string[] scopes);
+            requestValidator.ValidateQueryParam("userid", true, uint.TryParse, out uint userId);
+            requestValidator.ValidateQueryParam("partyId", true, uint.TryParse, out uint partyId);
+            requestValidator.ValidateQueryParam("pid", true, tokenHelper.IsValidPid, out string pid);
+            requestValidator.ValidateQueryParam("authlvl", false, tokenHelper.IsValidAuthLvl, out string authLvl, "3");
+            requestValidator.ValidateQueryParam("consumerOrgNo", false, tokenHelper.IsValidAuthLvl, out string consumerOrgNo, "991825827");
+            requestValidator.ValidateQueryParam("username", false, tokenHelper.IsValidIdentifier, out string userName, "");
+            requestValidator.ValidateQueryParam("client_amr", false, tokenHelper.IsValidIdentifier, out string clientAmr, "virksomhetssertifikat");
+            requestValidator.ValidateQueryParam<uint>("ttl", false, uint.TryParse, out uint ttl, 1800);
 
-            rh.ValidateQueryParam("scopes", true, TokenHelper.TryParseScopes, out string[] scopes);
-            rh.ValidateQueryParam("userid", true, uint.TryParse, out uint userId);
-            rh.ValidateQueryParam("partyId", true, uint.TryParse, out uint partyId);
-            rh.ValidateQueryParam("pid", true, TokenHelper.IsValidPid, out string pid);
-            rh.ValidateQueryParam("authlvl", false, TokenHelper.IsValidAuthLvl, out string authLvl, "3");
-            rh.ValidateQueryParam("consumerOrgNo", false, TokenHelper.IsValidAuthLvl, out string consumerOrgNo, "991825827");
-            rh.ValidateQueryParam("username", false, TokenHelper.IsValidIdentifier, out string userName, "");
-            rh.ValidateQueryParam("client_amr", false, TokenHelper.IsValidIdentifier, out string clientAmr, "virksomhetssertifikat");
-            rh.ValidateQueryParam<uint>("ttl", false, uint.TryParse, out uint ttl, 1800);
-
-            if (rh.Errors.Count > 0)
+            if (requestValidator.GetErrors().Count > 0)
             {
-                 return new BadRequestObjectResult(rh.Errors);
+                 return new BadRequestObjectResult(requestValidator.GetErrors());
             }
 
-            string token = TokenHelper.GetPersonalToken(scopes, userId, partyId, pid, authLvl, consumerOrgNo, userName, clientAmr, ttl);
+            string token = await tokenHelper.GetPersonalToken(scopes, userId, partyId, pid, authLvl, consumerOrgNo, userName, clientAmr, ttl);
 
             if (!string.IsNullOrEmpty(req.Query["dump"]))
             {
-                return new OkObjectResult(TokenHelper.Dump(token));
+                return new OkObjectResult(tokenHelper.Dump(token));
             }
 
             return new OkObjectResult(token);
