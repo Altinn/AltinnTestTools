@@ -4,6 +4,9 @@
 # Azure Functions localsettings file
 local.settings.json
 
+# Temp dir
+local/**
+
 # Certs
 *.pfx
 
