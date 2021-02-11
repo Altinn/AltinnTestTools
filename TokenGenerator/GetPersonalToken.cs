@@ -13,17 +13,24 @@ namespace TokenGenerator
         private readonly Settings settings;
         private readonly IToken tokenHelper;
         private readonly IRequestValidator requestValidator;
+        private readonly IAuthorization authorization;
 
-        public GetPersonalToken(IOptions<Settings> settings, IToken tokenHelper, IRequestValidator requestValidator)
+        public GetPersonalToken(IOptions<Settings> settings, IToken tokenHelper, IRequestValidator requestValidator, IAuthorization authorization)
         {
             this.settings = settings.Value;
             this.tokenHelper = tokenHelper;
             this.requestValidator = requestValidator;
+            this.authorization = authorization;
         }
 
         [FunctionName(nameof(GetPersonalToken))]
-        public async Task<ActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest req)
+        public async Task<ActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = null)] HttpRequest req)
         {
+            if (!authorization.Authorize(out ActionResult failedAuthorizationResult))
+            {
+                return failedAuthorizationResult;
+            }
+
             requestValidator.ValidateQueryParam("scopes", true, tokenHelper.TryParseScopes, out string[] scopes);
             requestValidator.ValidateQueryParam("userid", true, uint.TryParse, out uint userId);
             requestValidator.ValidateQueryParam("partyId", true, uint.TryParse, out uint partyId);

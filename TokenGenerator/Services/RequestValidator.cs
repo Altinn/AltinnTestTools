@@ -13,13 +13,13 @@ namespace TokenGenerator.Services
 
         private const string MANDATORY_IS_MISSING = "Parameter must be supplied";
         private const string FAILED_VALIDATION = "Parameter was supplied with a invalid value";
-        private Dictionary<string, string> errors = new Dictionary<string, string>();
+        private readonly Dictionary<string, string> errors = new Dictionary<string, string>();
 
         public delegate V ValidatorParser<T, U, V>(T input, out U output);
 
         public RequestValidator(IHttpContextAccessor contextAccessor)
         {
-            this.req = contextAccessor.HttpContext.Request;
+            req = contextAccessor.HttpContext.Request;
         }
 
         public void ValidateQueryParam<OutT>(string field, bool isRequired, ValidatorParser<string, OutT, bool> validator, out OutT output, OutT defaultValue = default)

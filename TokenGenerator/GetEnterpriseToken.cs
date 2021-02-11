@@ -13,17 +13,24 @@ namespace TokenGenerator
         private readonly Settings settings;
         private readonly IToken tokenHelper;
         private readonly IRequestValidator requestValidator;
+        private readonly IAuthorization authorization;
 
-        public GetEnterpriseToken(IOptions<Settings> settings, IToken tokenHelper, IRequestValidator requestValidator)
+        public GetEnterpriseToken(IOptions<Settings> settings, IToken tokenHelper, IRequestValidator requestValidator, IAuthorization authorization)
         {
             this.settings = settings.Value;
             this.tokenHelper = tokenHelper;
             this.requestValidator = requestValidator;
+            this.authorization = authorization;
         }
 
         [FunctionName(nameof(GetEnterpriseToken))]
-        public async Task<ActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest req)
+        public async Task<ActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = null)] HttpRequest req)
         {
+            if (!authorization.Authorize(out ActionResult failedAuthorizationResult))
+            {
+                return failedAuthorizationResult;
+            }
+
             requestValidator.ValidateQueryParam("scopes", true, tokenHelper.TryParseScopes, out string[] scopes);
             requestValidator.ValidateQueryParam("org", true, tokenHelper.IsValidIdentifier, out string org);
             requestValidator.ValidateQueryParam("orgNo", true, tokenHelper.IsValidOrgNo, out string orgNo);

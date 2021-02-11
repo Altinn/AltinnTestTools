@@ -18,21 +18,24 @@ namespace TokenGenerator
         public override void Configure(IFunctionsHostBuilder builder)
         {
             var config = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                .AddJsonFile(Path.Combine(builder.GetContext().ApplicationRootPath, "local.settings.json"), optional: true, reloadOnChange: true)
                 .AddEnvironmentVariables()
                 .Build();
             
             // This is required for CertificatePfx implementation to work in both Azure and locally
             Environment.SetEnvironmentVariable("ApplicationRootPath", builder.GetContext().ApplicationRootPath);
 
-            builder.Services.Configure<Settings>(config.GetSection("ConfigurationItems"));
+            builder.Services.Configure<Settings>(config.GetSection("Settings"));
             builder.Services.AddOptions();
 
-            builder.Services.AddSingleton<ICertificateService, CertificatePfx>();
-            //builder.Services.AddSingleton<ICertificateService, CertificateKeyVault>();
+            //builder.Services.AddSingleton<ICertificateService, CertificatePfx>();
+            builder.Services.AddSingleton<ICertificateService, CertificateKeyVault>();
             builder.Services.AddSingleton<IToken, Token>();
+            builder.Services.AddSingleton<IAuthorizationBearer, AuthorizationBearer>();
+            builder.Services.AddSingleton<IAuthorizationBasic, AuthorizationBasic>();
+
             builder.Services.AddScoped<IRequestValidator, RequestValidator>();
+            builder.Services.AddScoped<IAuthorization, Authorization>();
         }
     }
 }

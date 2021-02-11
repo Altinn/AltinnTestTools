@@ -10,10 +10,10 @@
         private X509Certificate2 apiTokenSigningCertificate = null;
         private X509Certificate2 consentTokenSigningCertificate = null;
 
-        private const string API_TOKEN_SIGNING_CERT_PFX_PATH = "certs/apitoken.pfx";
+        private const string API_TOKEN_SIGNING_CERT_PFX_PATH = "Certificates/apitoken.pfx";
         private const string API_TOKEN_SIGNING_CERT_PASSWORD = "apitoken";
-        private const string CONSENT_TOKEN_SIGNING_CERT_PFX_PATH = "certs/consenttoken.pfx";
-        private const string CONSENT_TOKEN_SIGNING_CERT_PASSWORD = "apitoken";
+        private const string CONSENT_TOKEN_SIGNING_CERT_PFX_PATH = "Certificates/consenttoken.pfx";
+        private const string CONSENT_TOKEN_SIGNING_CERT_PASSWORD = "consenttoken";
 
         public async Task<X509Certificate2> GetApiTokenSigningCertificate()
         {

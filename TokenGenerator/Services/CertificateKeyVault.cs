@@ -4,18 +4,18 @@
     using System.Security.Cryptography.X509Certificates;
     using System.Threading.Tasks;
     using Azure.Identity;
-    using Azure.Security.KeyVault.Certificates;
+    using Azure.Security.KeyVault.Secrets;
     using Microsoft.Extensions.Options;
 
-    public class CertificateServiceKeyVault : ICertificateService
+    public class CertificateKeyVault : ICertificateService
     {
         private readonly Settings settings;
 
-        private CertificateClient certificateClient = null;
+        private SecretClient secretClient = null;
         private X509Certificate2 apiTokenSigningCertificate = null;
         private X509Certificate2 consentTokenSigningCertificate = null;
 
-        public CertificateServiceKeyVault(IOptions<Settings> settings)
+        public CertificateKeyVault(IOptions<Settings> settings)
         {
             this.settings = settings.Value;
         }
@@ -24,9 +24,10 @@
         {
             if (apiTokenSigningCertificate == null)
             {
-                var client = GetCertificateClient();
-                var cert = await client.GetCertificateAsync(settings.ApiTokenSigningCertName);
-                apiTokenSigningCertificate =  new X509Certificate2(cert.Value.Cer, string.Empty, X509KeyStorageFlags.MachineKeySet);
+                var secretClient = GetSecretClient();
+                var certWithPrivateKey = await secretClient.GetSecretAsync(settings.ApiTokenSigningCertName);
+
+                apiTokenSigningCertificate =  new X509Certificate2(Convert.FromBase64String(certWithPrivateKey.Value.Value), string.Empty, X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.Exportable);
             }
 
             return apiTokenSigningCertificate;
@@ -36,23 +37,23 @@
         {
             if (consentTokenSigningCertificate == null)
             {
-                var client = GetCertificateClient();
-                var cert = await client.GetCertificateAsync(settings.ApiTokenSigningCertName);
-                consentTokenSigningCertificate =  new X509Certificate2(cert.Value.Cer, string.Empty, X509KeyStorageFlags.MachineKeySet);
+                var secretClient = GetSecretClient();
+                var certWithPrivateKey = await secretClient.GetSecretAsync(settings.ApiTokenSigningCertName);
+                consentTokenSigningCertificate =  new X509Certificate2(Convert.FromBase64String(certWithPrivateKey.Value.Value), string.Empty, X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.Exportable);
             }
 
             return consentTokenSigningCertificate;
         }
 
-        private CertificateClient GetCertificateClient()
+        private SecretClient GetSecretClient()
         {
-            if (certificateClient == null)
+            if (secretClient == null)
             {
                 var kvUri = $"https://{settings.KeyVaultName}.vault.azure.net";
-                certificateClient = new CertificateClient(new Uri(kvUri), new DefaultAzureCredential());
+                secretClient = new SecretClient(new Uri(kvUri), new DefaultAzureCredential());
             }
 
-            return certificateClient;
+            return secretClient;
         }
     }
 }
