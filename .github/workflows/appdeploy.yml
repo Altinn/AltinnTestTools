@@ -1,15 +1,23 @@
-name: Windows_Dotnet_Workflow
+name: Azure_Function_CD
 
 on:
-  [push]
+  push:
+    # Only deploy tagged commits
+    tags:
+      - 'v*.*.*'
 
 # CONFIGURATION
-# For help, go to https://github.com/Azure/Actions
+# 1. Create a service principal for GitHub to use:
+#     az ad sp create-for-rbac --name "{nameForServicePrincipal}" --role contributor \
+#        --scopes /subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{functionAppName} --sdk-auth
 #
-# 1. Paste the RBAC json into the following secret in your repository:
+# 2. Paste the RBAC json into the following secret in your repository:
 #   AZURE_RBAC_CREDENTIALS
 #
-# 2. Change these variables for your configuration:
+# 3. Change these variables for your configuration:
+#
+# 4. Add to .github/workflows/main.yml, and commit/push to GitHub
+#
 env:
   AZURE_FUNCTIONAPP_NAME: altinn-testtools-token-generator  # set this to your application's name
   AZURE_FUNCTIONAPP_PACKAGE_PATH: '.'    # set this to the path to your web app project, defaults to the repository root
@@ -46,4 +54,3 @@ jobs:
         app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
         package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/output'
 
-# For more samples to get started with GitHub Action workflows to deploy to Azure, refer to https://github.com/Azure/actions-workflow-samples
