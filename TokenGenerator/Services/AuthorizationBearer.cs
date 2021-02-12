@@ -9,6 +9,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Net.Http;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace TokenGenerator.Services
 {
@@ -53,13 +54,7 @@ namespace TokenGenerator.Services
             this.settings = settings.Value;
         }
 
-        /// <summary>
-        /// Callback for authenticating the user. Extracts bearer token, and validates signature and claims
-        /// </summary>
-        /// <param name="context">The authentication context</param>
-        /// <param name="cancellationToken">A cancellation token</param>
-        /// <returns>Void in async context</returns>
-        public bool IsAuthorized(string authorizationString, out ActionResult failedAuthorizationResult)
+        public async Task<ActionResult> IsAuthorized(string authorizationString)
         {
             try
             {
@@ -69,11 +64,10 @@ namespace TokenGenerator.Services
 
                 if (jwtToken.SignatureAlgorithm != SecurityAlgorithms.RsaSha256)
                 {
-                    failedAuthorizationResult = new BadRequestObjectResult("Expected RsaSha256 signature");
-                    return false;
+                    return new BadRequestObjectResult("Expected RsaSha256 signature");
                 }
 
-                OpenIdConnectConfiguration configuration = ConfigurationManager.GetConfigurationAsync().Result;
+                OpenIdConnectConfiguration configuration = await ConfigurationManager.GetConfigurationAsync();
 
                 TokenValidationParameters parameters = new TokenValidationParameters()
                 {
@@ -92,17 +86,14 @@ namespace TokenGenerator.Services
                 Claim claim = principal.Claims.FirstOrDefault(x => x.Type == "scope");
                 if (claim == null || claim.Value.Split(' ').FirstOrDefault(x => x.Equals(settings.AuthorizedScope)) == null) 
                 {
-                    failedAuthorizationResult = new UnauthorizedObjectResult("Missing required scope: " + settings.AuthorizedScope) { StatusCode = 403 };
-                    return false;
+                    return new UnauthorizedObjectResult("Missing required scope: " + settings.AuthorizedScope) { StatusCode = 403 };
                 }
 
-                failedAuthorizationResult = null;
-                return true;
+                return null;
             }
             catch (Exception e)
             {
-                failedAuthorizationResult = new UnauthorizedObjectResult(e.Message) { StatusCode = 403 };
-                return false;
+                return new UnauthorizedObjectResult(e.Message) { StatusCode = 403 };
             }
         }
     }

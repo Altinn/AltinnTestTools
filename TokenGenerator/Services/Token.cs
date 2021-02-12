@@ -15,6 +15,7 @@ namespace TokenGenerator.Services
 {
     public class Token : IToken
     {
+        private const string validScopeListRegex = "^[a-z0-9:/_-, ]+$";
         private readonly ICertificateService certificateHelper;
 
         public Token(ICertificateService certificateHelper)
@@ -24,28 +25,6 @@ namespace TokenGenerator.Services
 
         public async Task<string> GetEnterpriseToken(string[] scopes, string org, string orgNo, string supplierOrgNo, uint ttl)
         {
-
-            /*
-                {
-                  "scope": "altinn:whatever",
-                  "token_type": "Bearer",
-                  "exp": 1612629871,
-                  "iat": 1612628071,
-                  "client_id": "806e1e80-e3a7-4a73-980e-f92ba1c2bf86",
-                  "jti": "P3IqinzPNJaW8k7Y235vz0sqrWAXmASBlDGHtAqH-Ac",
-                  "consumer": {
-                    "authority": "iso6523-actorid-upis",
-                    "ID": "0192:991825827"
-                  },
-                  "urn:altinn:org": "digdir",
-                  "urn:altinn:orgNumber": 991825827,
-                  "urn:altinn:authenticatemethod": "maskinporten",
-                  "urn:altinn:authlevel": 3,
-                  "iss": "https://platform.tt02.altinn.no/",
-                  "nbf": 1612628071
-                }
-            */
-
             var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
             var signingCertificate = await certificateHelper.GetApiTokenSigningCertificate();
             var securityKey = new X509SecurityKey(signingCertificate);
@@ -85,32 +64,6 @@ namespace TokenGenerator.Services
 
         public async Task<string> GetPersonalToken(string[] scopes, uint userId, uint partyId, string pid, string authLvl, string consumerOrgNo, string userName, string client_amr, uint ttl)
         {
-            /*
-            {
-              "nameid": "61218",
-              "urn:altinn:userid": "61218",
-              "urn:altinn:username": "larsdreyer",
-              "urn:altinn:partyid": 50042162,
-              "urn:altinn:authenticatemethod": "NotDefined",
-              "urn:altinn:authlevel": 3,
-              "client_amr": "virksomhetssertifikat",
-              "pid": "11115601999",
-              "token_type": "Bearer",
-              "client_id": "fbce2007-2efb-4d3c-a1fa-919d6d328135",
-              "acr": "Level3",
-              "scope": "altinn:reportees altinn:profiles.read altinn:instances.read altinn:instances.write",
-              "exp": 1612825327,
-              "iat": 1612823527,
-              "client_orgno": "991825827",
-              "consumer": {
-                "authority": "iso6523-actorid-upis",
-                "ID": "0192:991825827"
-              },
-              "iss": "https://platform.tt02.altinn.no/",
-              "nbf": 1612823527
-            }
-            */
-
             var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
             var signingCertificate = await certificateHelper.GetApiTokenSigningCertificate();
             var securityKey = new X509SecurityKey(signingCertificate);
@@ -152,7 +105,7 @@ namespace TokenGenerator.Services
         public bool TryParseScopes(string input, out string[] scopes)
         {
             scopes = null;
-            if (string.IsNullOrEmpty(input) || input.Length > 200 || !Regex.IsMatch(input, "^[a-z0-9: ,]+$"))
+            if (string.IsNullOrEmpty(input) || input.Length > 200 || !Regex.IsMatch(input, validScopeListRegex))
             {
                 return false;
             }

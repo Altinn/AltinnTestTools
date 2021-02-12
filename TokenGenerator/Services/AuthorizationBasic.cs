@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
@@ -14,21 +15,18 @@ namespace TokenGenerator.Services
             this.settings = settings.Value;
         }
 
-        public bool IsAuthorized(string authorizationString, out ActionResult authorizationFailureResult)
+        public async Task<ActionResult> IsAuthorized(string authorizationString)
         {
             if (!ParseUserNamePassword(authorizationString, out string userName, out string password))
             {
-                authorizationFailureResult = new BadRequestResult();
-                return false;
+                return new BadRequestResult();
             }
 
             if (!IsUserAuthorized(userName, password)) {
-                authorizationFailureResult = new BasicAuthenticationRequestResult();
-                return false;
+                return new BasicAuthenticationRequestResult();
             }
 
-            authorizationFailureResult = null;
-            return true;
+            return await Task.FromResult<ActionResult>(null);
         }
 
         private bool ParseUserNamePassword(string rawInput, out string userName, out string password)

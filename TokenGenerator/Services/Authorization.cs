@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
 
 namespace TokenGenerator.Services
 {
@@ -13,12 +14,11 @@ namespace TokenGenerator.Services
             ctx = contextAccessor.HttpContext;
         }
 
-        public bool Authorize(out ActionResult result)
+        public async Task<ActionResult> Authorize()
         {
             if (!ctx.Request.Headers.ContainsKey("Authorization"))
             {
-                result = new BasicAuthenticationRequestResult();
-                return false;
+                return new BasicAuthenticationRequestResult();
             }
 
             string[] parts = ctx.Request.Headers["Authorization"].ToString().Split(' ', 2);
@@ -35,18 +35,10 @@ namespace TokenGenerator.Services
 
             if (handler == null)
             {
-                result = new BasicAuthenticationRequestResult();
-                return false;
+                return new BasicAuthenticationRequestResult();
             }
 
-            if (!handler.IsAuthorized(parts[1], out ActionResult failedAuthorizationResult)) 
-            {
-                result = failedAuthorizationResult;
-                return false;
-            }
-
-            result = null;
-            return true;
+            return await handler.IsAuthorized(parts[1]);
         }
     }
 

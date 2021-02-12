@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace TokenGenerator.Services
 {
     public interface IAuthorizationMethod
     {
-        bool IsAuthorized(string authorizationString, out ActionResult authorizationFailureResult);
+        Task<ActionResult> IsAuthorized(string authorizationString);
     }
 }
