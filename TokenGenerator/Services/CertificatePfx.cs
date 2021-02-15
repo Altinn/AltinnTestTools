@@ -15,7 +15,7 @@
         private const string CONSENT_TOKEN_SIGNING_CERT_PFX_PATH = "Certificates/consenttoken.pfx";
         private const string CONSENT_TOKEN_SIGNING_CERT_PASSWORD = "consenttoken";
 
-        public async Task<X509Certificate2> GetApiTokenSigningCertificate()
+        public async Task<X509Certificate2> GetApiTokenSigningCertificate(string _)
         {
             if (apiTokenSigningCertificate == null)
             {
@@ -33,7 +33,7 @@
             return await Task.FromResult(apiTokenSigningCertificate);
         }
 
-        public async Task<X509Certificate2> GetConsentTokenSigningCertificate()
+        public async Task<X509Certificate2> GetConsentTokenSigningCertificate(string _)
         {
             if (consentTokenSigningCertificate == null)
             {

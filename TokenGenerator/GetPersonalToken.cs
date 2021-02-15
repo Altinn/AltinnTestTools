@@ -32,6 +32,7 @@ namespace TokenGenerator
                 return failedAuthorizationResult;
             }
 
+            requestValidator.ValidateQueryParam("env", true, tokenHelper.IsValidEnvironment, out string env);
             requestValidator.ValidateQueryParam("scopes", true, tokenHelper.TryParseScopes, out string[] scopes);
             requestValidator.ValidateQueryParam("userid", true, uint.TryParse, out uint userId);
             requestValidator.ValidateQueryParam("partyId", true, uint.TryParse, out uint partyId);
@@ -47,7 +48,7 @@ namespace TokenGenerator
                  return new BadRequestObjectResult(requestValidator.GetErrors());
             }
 
-            string token = await tokenHelper.GetPersonalToken(scopes, userId, partyId, pid, authLvl, consumerOrgNo, userName, clientAmr, ttl);
+            string token = await tokenHelper.GetPersonalToken(env, scopes, userId, partyId, pid, authLvl, consumerOrgNo, userName, clientAmr, ttl);
 
             if (!string.IsNullOrEmpty(req.Query["dump"]))
             {

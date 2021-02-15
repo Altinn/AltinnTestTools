@@ -2,7 +2,9 @@ name: Azure_Function_CD
 
 on:
   push:
-    # Only deploy tagged commits
+    # This file is only for TokenGenerator. Only deploy tagged commits.
+    paths:
+      - 'TokenGenerator/**'
     tags:
       - 'v*.*.*'
 

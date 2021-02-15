@@ -15,18 +15,20 @@ namespace TokenGenerator.Services
 {
     public class Token : IToken
     {
-        private const string validScopeListRegex = "^[a-z0-9:/_-, ]+$";
+        private readonly Settings settings;
+        private const string validScopeListRegex = @"^[a-z0-9:/_\-, ]+$";
         private readonly ICertificateService certificateHelper;
 
-        public Token(ICertificateService certificateHelper)
+        public Token(IOptions<Settings> settings, ICertificateService certificateHelper)
         {
+            this.settings = settings.Value;
             this.certificateHelper = certificateHelper;
         }
 
-        public async Task<string> GetEnterpriseToken(string[] scopes, string org, string orgNo, string supplierOrgNo, uint ttl)
+        public async Task<string> GetEnterpriseToken(string env, string[] scopes, string org, string orgNo, string supplierOrgNo, uint ttl)
         {
             var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
-            var signingCertificate = await certificateHelper.GetApiTokenSigningCertificate();
+            var signingCertificate = await certificateHelper.GetApiTokenSigningCertificate(env);
             var securityKey = new X509SecurityKey(signingCertificate);
             var header = new JwtHeader(new SigningCredentials(securityKey, SecurityAlgorithms.RsaSha256))
             {
@@ -46,7 +48,7 @@ namespace TokenGenerator.Services
                 { "urn:altinn:orgNumber", orgNo },
                 { "urn:altinn:authenticatemethod", "maskinporten" },
                 { "urn:altinn:authlevel", 3 },
-                { "iss", "https://platform.tt02.altinn.no/" },
+                { "iss", string.Format("https://platform.{0}.altinn.no/", env) },
                 { "actual_iss", "altinn-test-tools" },
                 { "nbf", dateTimeOffset.ToUnixTimeSeconds() },
             };
@@ -62,10 +64,10 @@ namespace TokenGenerator.Services
             return handler.WriteToken(securityToken);
         }
 
-        public async Task<string> GetPersonalToken(string[] scopes, uint userId, uint partyId, string pid, string authLvl, string consumerOrgNo, string userName, string client_amr, uint ttl)
+        public async Task<string> GetPersonalToken(string env, string[] scopes, uint userId, uint partyId, string pid, string authLvl, string consumerOrgNo, string userName, string client_amr, uint ttl)
         {
             var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
-            var signingCertificate = await certificateHelper.GetApiTokenSigningCertificate();
+            var signingCertificate = await certificateHelper.GetApiTokenSigningCertificate(env);
             var securityKey = new X509SecurityKey(signingCertificate);
             var header = new JwtHeader(new SigningCredentials(securityKey, SecurityAlgorithms.RsaSha256))
             {
@@ -90,7 +92,7 @@ namespace TokenGenerator.Services
                 { "iat", dateTimeOffset.ToUnixTimeSeconds() },
                 { "client_orgno", consumerOrgNo },
                 { "consumer", GetOrgNoObject(consumerOrgNo) },
-                { "iss", "https://platform.tt02.altinn.no/" },
+                { "iss", string.Format("https://platform.{0}.altinn.no/", env) },
                 { "actual_iss", "altinn-test-tools" },
                 { "nbf", dateTimeOffset.ToUnixTimeSeconds() },
             };
@@ -132,6 +134,11 @@ namespace TokenGenerator.Services
         public bool IsValidAuthLvl(string authlvl)
         {
             return authlvl == "3" || authlvl == "4";
+        }
+
+        public bool IsValidEnvironment(string env)
+        {
+            return settings.EnvironmentsDict.ContainsKey(env);
         }
 
         public string Dump(string token)

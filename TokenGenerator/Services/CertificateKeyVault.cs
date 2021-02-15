@@ -1,6 +1,7 @@
 ﻿namespace TokenGenerator.Services
 {
     using System;
+    using System.Collections.Generic;
     using System.Security.Cryptography.X509Certificates;
     using System.Threading.Tasks;
     using Azure.Identity;
@@ -11,49 +12,54 @@
     {
         private readonly Settings settings;
 
-        private SecretClient secretClient = null;
-        private X509Certificate2 apiTokenSigningCertificate = null;
-        private X509Certificate2 consentTokenSigningCertificate = null;
+        private readonly Dictionary<string, X509Certificate2> apiTokenSigningCertificates = new Dictionary<string, X509Certificate2>();
+        private readonly Dictionary<string, X509Certificate2> consentTokenSigningCertificates = null;
 
         public CertificateKeyVault(IOptions<Settings> settings)
         {
             this.settings = settings.Value;
         }
 
-        public async Task<X509Certificate2> GetApiTokenSigningCertificate()
+        public async Task<X509Certificate2> GetApiTokenSigningCertificate(string environment)
         {
-            if (apiTokenSigningCertificate == null)
+            if (string.IsNullOrEmpty(environment) || settings.EnvironmentsDict[environment] == null || settings.ApiTokenSigningCertNamesDict[environment] == null)
             {
-                var secretClient = GetSecretClient();
-                var certWithPrivateKey = await secretClient.GetSecretAsync(settings.ApiTokenSigningCertName);
-
-                apiTokenSigningCertificate =  new X509Certificate2(Convert.FromBase64String(certWithPrivateKey.Value.Value), string.Empty, X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.Exportable);
+                throw new ArgumentException("Invalid environment: " + environment ?? "<empty>");
             }
 
-            return apiTokenSigningCertificate;
+            if (!string.IsNullOrEmpty(environment) && !apiTokenSigningCertificates.ContainsKey(environment))
+            {
+                var secretClient = GetSecretClient(settings.EnvironmentsDict[environment]);
+                var certWithPrivateKey = await secretClient.GetSecretAsync(settings.ApiTokenSigningCertNamesDict[environment]);
+
+                apiTokenSigningCertificates[environment] = new X509Certificate2(Convert.FromBase64String(certWithPrivateKey.Value.Value), string.Empty, X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.Exportable);
+            }
+
+            return apiTokenSigningCertificates[environment];
         }
 
-        public async Task<X509Certificate2> GetConsentTokenSigningCertificate()
+        public async Task<X509Certificate2> GetConsentTokenSigningCertificate(string environment)
         {
-            if (consentTokenSigningCertificate == null)
+
+            if (string.IsNullOrEmpty(environment) || settings.EnvironmentsDict[environment] == null || settings.ConsentTokenSigningCertNamesDict[environment] == null)
             {
-                var secretClient = GetSecretClient();
-                var certWithPrivateKey = await secretClient.GetSecretAsync(settings.ApiTokenSigningCertName);
-                consentTokenSigningCertificate =  new X509Certificate2(Convert.FromBase64String(certWithPrivateKey.Value.Value), string.Empty, X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.Exportable);
+                throw new ArgumentException("Invalid environment: " + environment ?? "<empty>");
             }
 
-            return consentTokenSigningCertificate;
+             if (!string.IsNullOrEmpty(environment) && !consentTokenSigningCertificates.ContainsKey(environment))
+            {
+                var secretClient = GetSecretClient(settings.EnvironmentsDict[environment]);
+                var certWithPrivateKey = await secretClient.GetSecretAsync(settings.ConsentTokenSigningCertNamesDict[environment]);
+                consentTokenSigningCertificates[environment] =  new X509Certificate2(Convert.FromBase64String(certWithPrivateKey.Value.Value), string.Empty, X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.Exportable);
+            }
+
+            return consentTokenSigningCertificates[environment];
         }
 
-        private SecretClient GetSecretClient()
+        private SecretClient GetSecretClient(string keyVaultName)
         {
-            if (secretClient == null)
-            {
-                var kvUri = $"https://{settings.KeyVaultName}.vault.azure.net";
-                secretClient = new SecretClient(new Uri(kvUri), new DefaultAzureCredential());
-            }
-
-            return secretClient;
+            var kvUri = $"https://{keyVaultName}.vault.azure.net";
+            return new SecretClient(new Uri(kvUri), new DefaultAzureCredential());
         }
     }
 }

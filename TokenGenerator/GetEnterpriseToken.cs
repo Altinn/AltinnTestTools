@@ -32,6 +32,7 @@ namespace TokenGenerator
                 return failedAuthorizationResult;
             }
 
+            requestValidator.ValidateQueryParam("env", true, tokenHelper.IsValidEnvironment, out string env);
             requestValidator.ValidateQueryParam("scopes", true, tokenHelper.TryParseScopes, out string[] scopes);
             requestValidator.ValidateQueryParam("org", true, tokenHelper.IsValidIdentifier, out string org);
             requestValidator.ValidateQueryParam("orgNo", true, tokenHelper.IsValidOrgNo, out string orgNo);
@@ -43,7 +44,7 @@ namespace TokenGenerator
                  return new BadRequestObjectResult(requestValidator.GetErrors());
             }
             
-            string token = await tokenHelper.GetEnterpriseToken(scopes, org, orgNo, supplierOrgNo, ttl);
+            string token = await tokenHelper.GetEnterpriseToken(env, scopes, org, orgNo, supplierOrgNo, ttl);
 
             if (!string.IsNullOrEmpty(req.Query["dump"]))
             {
