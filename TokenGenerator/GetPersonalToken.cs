@@ -34,13 +34,13 @@ namespace TokenGenerator
 
             requestValidator.ValidateQueryParam("env", true, tokenHelper.IsValidEnvironment, out string env);
             requestValidator.ValidateQueryParam("scopes", true, tokenHelper.TryParseScopes, out string[] scopes);
-            requestValidator.ValidateQueryParam("userid", true, uint.TryParse, out uint userId);
+            requestValidator.ValidateQueryParam("userId", true, uint.TryParse, out uint userId);
             requestValidator.ValidateQueryParam("partyId", true, uint.TryParse, out uint partyId);
             requestValidator.ValidateQueryParam("pid", true, tokenHelper.IsValidPid, out string pid);
-            requestValidator.ValidateQueryParam("authlvl", false, tokenHelper.IsValidAuthLvl, out string authLvl, "3");
+            requestValidator.ValidateQueryParam("authLvl", false, tokenHelper.IsValidAuthLvl, out string authLvl, "3");
             requestValidator.ValidateQueryParam("consumerOrgNo", false, tokenHelper.IsValidAuthLvl, out string consumerOrgNo, "991825827");
-            requestValidator.ValidateQueryParam("username", false, tokenHelper.IsValidIdentifier, out string userName, "");
-            requestValidator.ValidateQueryParam("client_amr", false, tokenHelper.IsValidIdentifier, out string clientAmr, "virksomhetssertifikat");
+            requestValidator.ValidateQueryParam("userName", false, tokenHelper.IsValidIdentifier, out string userName, "");
+            requestValidator.ValidateQueryParam("clientAmr", false, tokenHelper.IsValidIdentifier, out string clientAmr, "virksomhetssertifikat");
             requestValidator.ValidateQueryParam<uint>("ttl", false, uint.TryParse, out uint ttl, 1800);
 
             if (requestValidator.GetErrors().Count > 0)

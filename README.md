@@ -17,13 +17,21 @@ The application requires authentication. Currently only available for internal u
 `https://altinn-token-generator.azurewebsites.net/api/GetEnterpriseToken?env={environment}&scopes={scopes}&org={orgName}&orgNo={orgNo}`
 
 #### Person tokens (aka ID-porten)
-`https://altinn-token-generator.azurewebsites.net/apiGetPersonalToken?env={environment}&scopes={scopes}&userid={userId}&partyId={partyId}&pid={pid}`
+`https://altinn-token-generator.azurewebsites.net/apiGetPersonalToken?env={environment}&scopes={scopes}&userId={userId}&partyId={partyId}&pid={pid}`
 
 #### Optional parameters:
 
 * `supplierOrgNo` (Enterprise tokens only)
 * `ttl` (Default: 1800 seconds)
-* `authlvl` (Personal tokens only. Default: `3`)
+* `authLvl` (Personal tokens only. Default: `3`)
 * `consumerOrgNo` (Personal tokens only. Default: `991825827`)
-* `username` (Personal tokens only. Default: *empty string*)
-* `client_amr` (Personal tokens only. Default: `virksomhetssertifikat`)
+* `userName` (Personal tokens only. Default: *empty string*)
+* `clientAmr` (Personal tokens only. Default: `virksomhetssertifikat`)
+
+## TokenGeneratorCli
+
+Simple console app for calling the API from a shell script. Uses `appsettings.json` for default settings, all of which can be overridden by command line arguments. 
+
+### Usage :
+
+Build, and run `TokenGeneratorCli.exe --help`
