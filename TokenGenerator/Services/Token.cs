@@ -16,7 +16,7 @@ namespace TokenGenerator.Services
     public class Token : IToken
     {
         private readonly Settings settings;
-        private const string validScopeListRegex = @"^[a-z0-9:/_\-, ]+$";
+        private const string validScopeListRegex = @"^[a-z0-9:/_\-,\. ]+$";
         private readonly ICertificateService certificateHelper;
 
         public Token(IOptions<Settings> settings, ICertificateService certificateHelper)
