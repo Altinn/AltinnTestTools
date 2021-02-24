@@ -48,7 +48,7 @@ namespace TokenGenerator.Services
                 { "urn:altinn:orgNumber", orgNo },
                 { "urn:altinn:authenticatemethod", "maskinporten" },
                 { "urn:altinn:authlevel", 3 },
-                { "iss", string.Format("https://platform.{0}.altinn.no/", env) },
+                { "iss", string.Format("https://platform.{0}.altinn.cloud/", env) },
                 { "actual_iss", "altinn-test-tools" },
                 { "nbf", dateTimeOffset.ToUnixTimeSeconds() },
             };
