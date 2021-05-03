@@ -48,7 +48,7 @@ namespace TokenGenerator.Services
                 { "urn:altinn:orgNumber", orgNo },
                 { "urn:altinn:authenticatemethod", "maskinporten" },
                 { "urn:altinn:authlevel", 3 },
-                { "iss", string.Format("https://platform.{0}.altinn.cloud/", env) },
+                { "iss", GetIssuer(env) },
                 { "actual_iss", "altinn-test-tools" },
                 { "nbf", dateTimeOffset.ToUnixTimeSeconds() },
             };
@@ -92,7 +92,7 @@ namespace TokenGenerator.Services
                 { "iat", dateTimeOffset.ToUnixTimeSeconds() },
                 { "client_orgno", consumerOrgNo },
                 { "consumer", GetOrgNoObject(consumerOrgNo) },
-                { "iss", string.Format("https://platform.{0}.altinn.no/", env) },
+                { "iss", GetIssuer(env) },
                 { "actual_iss", "altinn-test-tools" },
                 { "nbf", dateTimeOffset.ToUnixTimeSeconds() },
             };
@@ -166,6 +166,12 @@ namespace TokenGenerator.Services
         private Dictionary<string, string> GetOrgNoObject(string orgNo)
         {
             return new Dictionary<string, string>() { { "authority", "iso6523-actorid-upis" }, { "ID", "0192:" + orgNo } };
+        }
+
+        private string GetIssuer(string env)
+        {
+            string tld = env.ToLowerInvariant().StartsWith("at") ? "cloud" : "no";
+            return string.Format("https://platform.{0}.altinn.{1}/", env, tld);
         }
     }
 }
