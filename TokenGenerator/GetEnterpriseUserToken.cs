@@ -1,21 +1,21 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
-using TokenGenerator.Services;
 using System.Threading.Tasks;
+using TokenGenerator.Services;
 
 namespace TokenGenerator
 {
-    public class GetPersonalToken
+    public class GetEnterpriseUserToken
     {
         private readonly Settings settings;
         private readonly IToken tokenHelper;
         private readonly IRequestValidator requestValidator;
         private readonly IAuthorization authorization;
 
-        public GetPersonalToken(IOptions<Settings> settings, IToken tokenHelper, IRequestValidator requestValidator, IAuthorization authorization)
+        public GetEnterpriseUserToken(IOptions<Settings> settings, IToken tokenHelper, IRequestValidator requestValidator, IAuthorization authorization)
         {
             this.settings = settings.Value;
             this.tokenHelper = tokenHelper;
@@ -23,7 +23,7 @@ namespace TokenGenerator
             this.authorization = authorization;
         }
 
-        [FunctionName(nameof(GetPersonalToken))]
+        [FunctionName(nameof(GetEnterpriseUserToken))]
         public async Task<ActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = null)] HttpRequest req)
         {
             ActionResult failedAuthorizationResult = await authorization.Authorize();
@@ -34,13 +34,11 @@ namespace TokenGenerator
 
             requestValidator.ValidateQueryParam("env", true, tokenHelper.IsValidEnvironment, out string env);
             requestValidator.ValidateQueryParam("scopes", false, tokenHelper.TryParseScopes, out string[] scopes, new string[] { "altinn:enduser" });
-            requestValidator.ValidateQueryParam("userId", true, uint.TryParse, out uint userId);
+            requestValidator.ValidateQueryParam("org", false, tokenHelper.IsValidIdentifier, out string org);
+            requestValidator.ValidateQueryParam("orgNo", true, tokenHelper.IsValidOrgNo, out string orgNo);
             requestValidator.ValidateQueryParam("partyId", true, uint.TryParse, out uint partyId);
-            requestValidator.ValidateQueryParam("pid", true, tokenHelper.IsValidPid, out string pid);
-            requestValidator.ValidateQueryParam("authLvl", false, tokenHelper.IsValidAuthLvl, out string authLvl, "3");
-            requestValidator.ValidateQueryParam("consumerOrgNo", false, tokenHelper.IsValidAuthLvl, out string consumerOrgNo, "991825827");
-            requestValidator.ValidateQueryParam("userName", false, tokenHelper.IsValidIdentifier, out string userName, "");
-            requestValidator.ValidateQueryParam("clientAmr", false, tokenHelper.IsValidIdentifier, out string clientAmr, "virksomhetssertifikat");
+            requestValidator.ValidateQueryParam("userId", true, uint.TryParse, out uint userId);
+            requestValidator.ValidateQueryParam("userName", true, tokenHelper.IsValidIdentifier, out string userName);
             requestValidator.ValidateQueryParam<uint>("ttl", false, uint.TryParse, out uint ttl, 1800);
 
             if (requestValidator.GetErrors().Count > 0)
@@ -48,7 +46,7 @@ namespace TokenGenerator
                  return new BadRequestObjectResult(requestValidator.GetErrors());
             }
 
-            string token = await tokenHelper.GetPersonalToken(env, scopes, userId, partyId, pid, authLvl, consumerOrgNo, userName, clientAmr, ttl);
+            string token = await tokenHelper.GetEnterpriseUserToken(env, scopes, org, orgNo, partyId, userId, userName, ttl);
 
             if (!string.IsNullOrEmpty(req.Query["dump"]))
             {

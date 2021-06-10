@@ -64,6 +64,47 @@ namespace TokenGenerator.Services
             return handler.WriteToken(securityToken);
         }
 
+        public async Task<string> GetEnterpriseUserToken(string env, string[] scopes, string org, string orgNo, uint partyId, uint userId, string userName, uint ttl)
+        {
+            var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
+            var signingCertificate = await certificateHelper.GetApiTokenSigningCertificate(env);
+            var securityKey = new X509SecurityKey(signingCertificate);
+            var header = new JwtHeader(new SigningCredentials(securityKey, SecurityAlgorithms.RsaSha256))
+            {
+               { "x5c", signingCertificate.Thumbprint }
+            };
+
+            var payload = new JwtPayload
+            {
+                { "scope", string.Join(' ', scopes) },
+                { "token_type", "Bearer" },
+                { "exp", dateTimeOffset.ToUnixTimeSeconds() + ttl },
+                { "iat", dateTimeOffset.ToUnixTimeSeconds() },
+                { "client_id", Guid.NewGuid().ToString() },
+                { "consumer", GetOrgNoObject(orgNo) },
+                { "jti", RandomString(43) },
+                { "urn:altinn:userid", userId },
+                { "urn:altinn:username", userName },
+                { "urn:altinn:partyid", partyId },
+                { "urn:altinn:orgNumber", orgNo },
+                { "urn:altinn:authenticatemethod", "virksomhetsbruker" },
+                { "urn:altinn:authlevel", 3 },
+                { "iss", GetIssuer(env) },
+                { "actual_iss", "altinn-test-tools" },
+                { "nbf", dateTimeOffset.ToUnixTimeSeconds() },
+            };
+
+            if (!string.IsNullOrEmpty(org))
+            {
+                payload.Add("urn:altinn:org", org);
+            }
+
+            var securityToken = new JwtSecurityToken(header, payload);
+            var handler = new JwtSecurityTokenHandler();
+
+            return handler.WriteToken(securityToken);
+        }
+
         public async Task<string> GetPersonalToken(string env, string[] scopes, uint userId, uint partyId, string pid, string authLvl, string consumerOrgNo, string userName, string client_amr, uint ttl)
         {
             var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);

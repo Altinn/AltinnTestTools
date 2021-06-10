@@ -16,8 +16,11 @@ The application requires authentication. Currently only available for internal u
 #### Enterprise tokens (aka Maskinporten):
 `https://altinn-token-generator.azurewebsites.net/api/GetEnterpriseToken?env={environment}&scopes={scopes}&org={orgName}&orgNo={orgNo}`
 
+#### Enterprise user tokens (aka Maskinporten + Enterprise user authentication):
+`https://altinn-token-generator.azurewebsites.net/api/GetEnterpriseUserToken?env={environment}&orgNo={orgNo}&partyId={partyId}&userId={userId}&userName={userName}`
+
 #### Person tokens (aka ID-porten)
-`https://altinn-token-generator.azurewebsites.net/apiGetPersonalToken?env={environment}&scopes={scopes}&userId={userId}&partyId={partyId}&pid={pid}`
+`https://altinn-token-generator.azurewebsites.net/api/GetPersonalToken?env={environment}&scopes={scopes}&userId={userId}&partyId={partyId}&pid={pid}`
 
 #### Optional parameters:
 
