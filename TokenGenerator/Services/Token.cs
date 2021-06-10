@@ -86,7 +86,6 @@ namespace TokenGenerator.Services
                 { "urn:altinn:userid", userId },
                 { "urn:altinn:username", userName },
                 { "urn:altinn:partyid", partyId },
-                { "urn:altinn:org", org },
                 { "urn:altinn:orgNumber", orgNo },
                 { "urn:altinn:authenticatemethod", "virksomhetsbruker" },
                 { "urn:altinn:authlevel", 3 },
@@ -94,6 +93,11 @@ namespace TokenGenerator.Services
                 { "actual_iss", "altinn-test-tools" },
                 { "nbf", dateTimeOffset.ToUnixTimeSeconds() },
             };
+
+            if (!string.IsNullOrEmpty(org))
+            {
+                payload.Add("urn:altinn:org", org);
+            }
 
             var securityToken = new JwtSecurityToken(header, payload);
             var handler = new JwtSecurityTokenHandler();

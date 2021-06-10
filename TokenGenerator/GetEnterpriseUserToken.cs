@@ -33,12 +33,12 @@ namespace TokenGenerator
             }
 
             requestValidator.ValidateQueryParam("env", true, tokenHelper.IsValidEnvironment, out string env);
-            requestValidator.ValidateQueryParam("scopes", true, tokenHelper.TryParseScopes, out string[] scopes, new string[] { "altinn:enduser" });
-            requestValidator.ValidateQueryParam("org", true, tokenHelper.IsValidIdentifier, out string org);
+            requestValidator.ValidateQueryParam("scopes", false, tokenHelper.TryParseScopes, out string[] scopes, new string[] { "altinn:enduser" });
+            requestValidator.ValidateQueryParam("org", false, tokenHelper.IsValidIdentifier, out string org);
             requestValidator.ValidateQueryParam("orgNo", true, tokenHelper.IsValidOrgNo, out string orgNo);
             requestValidator.ValidateQueryParam("partyId", true, uint.TryParse, out uint partyId);
             requestValidator.ValidateQueryParam("userId", true, uint.TryParse, out uint userId);
-            requestValidator.ValidateQueryParam("userName", false, tokenHelper.IsValidIdentifier, out string userName);
+            requestValidator.ValidateQueryParam("userName", true, tokenHelper.IsValidIdentifier, out string userName);
             requestValidator.ValidateQueryParam<uint>("ttl", false, uint.TryParse, out uint ttl, 1800);
 
             if (requestValidator.GetErrors().Count > 0)
