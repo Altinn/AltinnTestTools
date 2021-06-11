@@ -3,7 +3,7 @@ Various tools used for testing Altinn
 
 ## Token Generator
 
-Simple HTTP API for generating arbitrary enterprise and person access tokens for test environments, used for automated testing. Matches tokens produced by [Altinn3 token exchange](https://docs.altinn.studio/altinn-api/authentication/#exchange-of-jwt-token). Implemented as a Azure Function running at https://aaltinn-testtools-token-generator.azurewebsites.net.
+Simple HTTP API for generating arbitrary enterprise and person access tokens for test environments, used for automated testing. Matches tokens produced by [Altinn3 token exchange](https://docs.altinn.studio/altinn-api/authentication/#exchange-of-jwt-token). Implemented as a Azure Function running at https://altinn-testtools-token-generator.azurewebsites.net.
 
 ### Access
 
