@@ -64,7 +64,7 @@ namespace TokenGenerator.Services
             return handler.WriteToken(securityToken);
         }
 
-        public async Task<string> GetEnterpriseUserToken(string env, string[] scopes, string org, string orgNo, uint partyId, uint userId, string userName, uint ttl)
+        public async Task<string> GetEnterpriseUserToken(string env, string[] scopes, string org, string orgNo, string supplierOrgNo, uint partyId, uint userId, string userName, uint ttl)
         {
             var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
             var signingCertificate = await certificateHelper.GetApiTokenSigningCertificate(env);
@@ -97,6 +97,11 @@ namespace TokenGenerator.Services
             if (!string.IsNullOrEmpty(org))
             {
                 payload.Add("urn:altinn:org", org);
+            }
+
+            if (!string.IsNullOrEmpty(supplierOrgNo))
+            {
+                payload.Add("supplier", GetOrgNoObject(supplierOrgNo));
             }
 
             var securityToken = new JwtSecurityToken(header, payload);

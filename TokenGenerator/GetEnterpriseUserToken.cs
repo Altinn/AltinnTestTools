@@ -36,6 +36,7 @@ namespace TokenGenerator
             requestValidator.ValidateQueryParam("scopes", false, tokenHelper.TryParseScopes, out string[] scopes, new string[] { "altinn:enduser" });
             requestValidator.ValidateQueryParam("org", false, tokenHelper.IsValidIdentifier, out string org);
             requestValidator.ValidateQueryParam("orgNo", true, tokenHelper.IsValidOrgNo, out string orgNo);
+            requestValidator.ValidateQueryParam("supplierOrgNo", false, tokenHelper.IsValidOrgNo, out string supplierOrgNo);
             requestValidator.ValidateQueryParam("partyId", true, uint.TryParse, out uint partyId);
             requestValidator.ValidateQueryParam("userId", true, uint.TryParse, out uint userId);
             requestValidator.ValidateQueryParam("userName", true, tokenHelper.IsValidIdentifier, out string userName);
@@ -46,7 +47,7 @@ namespace TokenGenerator
                  return new BadRequestObjectResult(requestValidator.GetErrors());
             }
 
-            string token = await tokenHelper.GetEnterpriseUserToken(env, scopes, org, orgNo, partyId, userId, userName, ttl);
+            string token = await tokenHelper.GetEnterpriseUserToken(env, scopes, org, orgNo, supplierOrgNo, partyId, userId, userName, ttl);
 
             if (!string.IsNullOrEmpty(req.Query["dump"]))
             {
