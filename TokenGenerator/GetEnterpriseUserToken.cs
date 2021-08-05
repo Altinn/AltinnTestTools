@@ -41,13 +41,14 @@ namespace TokenGenerator
             requestValidator.ValidateQueryParam("userId", true, uint.TryParse, out uint userId);
             requestValidator.ValidateQueryParam("userName", true, tokenHelper.IsValidIdentifier, out string userName);
             requestValidator.ValidateQueryParam<uint>("ttl", false, uint.TryParse, out uint ttl, 1800);
+            requestValidator.ValidateQueryParam("delegation_source", false, tokenHelper.IsValidUri, out string delegationsource);
 
             if (requestValidator.GetErrors().Count > 0)
             {
                  return new BadRequestObjectResult(requestValidator.GetErrors());
             }
 
-            string token = await tokenHelper.GetEnterpriseUserToken(env, scopes, org, orgNo, supplierOrgNo, partyId, userId, userName, ttl);
+            string token = await tokenHelper.GetEnterpriseUserToken(env, scopes, org, orgNo, supplierOrgNo, partyId, userId, userName, ttl, delegationsource);
 
             if (!string.IsNullOrEmpty(req.Query["dump"]))
             {

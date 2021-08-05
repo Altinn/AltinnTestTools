@@ -25,7 +25,7 @@ namespace TokenGenerator.Services
             this.certificateHelper = certificateHelper;
         }
 
-        public async Task<string> GetEnterpriseToken(string env, string[] scopes, string org, string orgNo, string supplierOrgNo, uint ttl)
+        public async Task<string> GetEnterpriseToken(string env, string[] scopes, string org, string orgNo, string supplierOrgNo, uint ttl, string delegationsource)
         {
             var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
             var signingCertificate = await certificateHelper.GetApiTokenSigningCertificate(env);
@@ -58,13 +58,18 @@ namespace TokenGenerator.Services
                 payload.Add("supplier", GetOrgNoObject(supplierOrgNo));
             }
 
+            if (!string.IsNullOrEmpty(delegationsource))
+            {
+                payload.Add("delegation_source", delegationsource);
+            }
+
             var securityToken = new JwtSecurityToken(header, payload);
             var handler = new JwtSecurityTokenHandler();
 
             return handler.WriteToken(securityToken);
         }
 
-        public async Task<string> GetEnterpriseUserToken(string env, string[] scopes, string org, string orgNo, string supplierOrgNo, uint partyId, uint userId, string userName, uint ttl)
+        public async Task<string> GetEnterpriseUserToken(string env, string[] scopes, string org, string orgNo, string supplierOrgNo, uint partyId, uint userId, string userName, uint ttl, string delegationsource)
         {
             var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
             var signingCertificate = await certificateHelper.GetApiTokenSigningCertificate(env);
@@ -102,6 +107,11 @@ namespace TokenGenerator.Services
             if (!string.IsNullOrEmpty(supplierOrgNo))
             {
                 payload.Add("supplier", GetOrgNoObject(supplierOrgNo));
+            }
+
+            if (!string.IsNullOrEmpty(delegationsource))
+            {
+                payload.Add("delegation_source", delegationsource);
             }
 
             var securityToken = new JwtSecurityToken(header, payload);
@@ -185,6 +195,11 @@ namespace TokenGenerator.Services
         public bool IsValidEnvironment(string env)
         {
             return settings.EnvironmentsDict.ContainsKey(env);
+        }
+
+        public bool IsValidUri(string uriString)
+        {
+            return Uri.TryCreate(uriString, UriKind.Absolute, out _);
         }
 
         public string Dump(string token)
