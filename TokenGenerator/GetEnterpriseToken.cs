@@ -45,7 +45,7 @@ namespace TokenGenerator
                  return new BadRequestObjectResult(requestValidator.GetErrors());
             }
             
-            string token = await tokenHelper.GetEnterpriseToken(env, scopes, org, orgNo, supplierOrgNo, ttl, delegationsource);
+            string token = await tokenHelper.GetEnterpriseToken(env, scopes, org, orgNo, supplierOrgNo, ttl, delegationSource);
 
             if (!string.IsNullOrEmpty(req.Query["dump"]))
             {
