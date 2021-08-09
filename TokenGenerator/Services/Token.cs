@@ -25,7 +25,7 @@ namespace TokenGenerator.Services
             this.certificateHelper = certificateHelper;
         }
 
-        public async Task<string> GetEnterpriseToken(string env, string[] scopes, string org, string orgNo, string supplierOrgNo, uint ttl, string delegationsource)
+        public async Task<string> GetEnterpriseToken(string env, string[] scopes, string org, string orgNo, string supplierOrgNo, uint ttl, string delegationSource)
         {
             var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
             var signingCertificate = await certificateHelper.GetApiTokenSigningCertificate(env);
