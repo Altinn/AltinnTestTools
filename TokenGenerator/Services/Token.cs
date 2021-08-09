@@ -58,7 +58,7 @@ namespace TokenGenerator.Services
                 payload.Add("supplier", GetOrgNoObject(supplierOrgNo));
             }
 
-            if (!string.IsNullOrEmpty(delegationsource))
+            if (!string.IsNullOrEmpty(delegationSource))
             {
                 payload.Add("delegation_source", delegationSource);
             }
@@ -109,7 +109,7 @@ namespace TokenGenerator.Services
                 payload.Add("supplier", GetOrgNoObject(supplierOrgNo));
             }
 
-            if (!string.IsNullOrEmpty(delegationsource))
+            if (!string.IsNullOrEmpty(delegationSource))
             {
                 payload.Add("delegation_source", delegationSource);
             }
