@@ -60,7 +60,7 @@ namespace TokenGenerator.Services
 
             if (!string.IsNullOrEmpty(delegationsource))
             {
-                payload.Add("delegation_source", delegationsource);
+                payload.Add("delegation_source", delegationSource);
             }
 
             var securityToken = new JwtSecurityToken(header, payload);
