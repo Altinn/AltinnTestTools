@@ -38,7 +38,7 @@ namespace TokenGenerator
             requestValidator.ValidateQueryParam("orgNo", true, tokenHelper.IsValidOrgNo, out string orgNo);
             requestValidator.ValidateQueryParam("supplierOrgNo", false, tokenHelper.IsValidOrgNo, out string supplierOrgNo);
             requestValidator.ValidateQueryParam<uint>("ttl", false, uint.TryParse, out uint ttl, 1800);
-            requestValidator.ValidateQueryParam("delegation_source", false, tokenHelper.IsValidUri, out string delegationsource);
+            requestValidator.ValidateQueryParam("delegationSource", false, tokenHelper.IsValidUri, out string delegationSource);
 
             if (requestValidator.GetErrors().Count > 0)
             {
