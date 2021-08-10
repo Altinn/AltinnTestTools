@@ -38,13 +38,14 @@ namespace TokenGenerator
             requestValidator.ValidateQueryParam("orgNo", true, tokenHelper.IsValidOrgNo, out string orgNo);
             requestValidator.ValidateQueryParam("supplierOrgNo", false, tokenHelper.IsValidOrgNo, out string supplierOrgNo);
             requestValidator.ValidateQueryParam<uint>("ttl", false, uint.TryParse, out uint ttl, 1800);
+            requestValidator.ValidateQueryParam("delegationSource", false, tokenHelper.IsValidUri, out string delegationSource);
 
             if (requestValidator.GetErrors().Count > 0)
             {
                  return new BadRequestObjectResult(requestValidator.GetErrors());
             }
             
-            string token = await tokenHelper.GetEnterpriseToken(env, scopes, org, orgNo, supplierOrgNo, ttl);
+            string token = await tokenHelper.GetEnterpriseToken(env, scopes, org, orgNo, supplierOrgNo, ttl, delegationSource);
 
             if (!string.IsNullOrEmpty(req.Query["dump"]))
             {
