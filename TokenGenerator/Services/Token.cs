@@ -120,7 +120,7 @@ namespace TokenGenerator.Services
             return handler.WriteToken(securityToken);
         }
 
-        public async Task<string> GetPersonalToken(string env, string[] scopes, uint userId, uint partyId, string pid, string authLvl, string consumerOrgNo, string userName, string client_amr, uint ttl)
+        public async Task<string> GetPersonalToken(string env, string[] scopes, uint userId, uint partyId, string pid, string authLvl, string consumerOrgNo, string userName, string client_amr, uint ttl, string delegationSource)
         {
             var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
             var signingCertificate = await certificateHelper.GetApiTokenSigningCertificate(env);
@@ -152,6 +152,11 @@ namespace TokenGenerator.Services
                 { "actual_iss", "altinn-test-tools" },
                 { "nbf", dateTimeOffset.ToUnixTimeSeconds() },
             };
+
+            if (!string.IsNullOrEmpty(delegationSource))
+            {
+                payload.Add("delegation_source", delegationSource);
+            }
 
             var securityToken = new JwtSecurityToken(header, payload);
             var handler = new JwtSecurityTokenHandler();
