@@ -7,15 +7,17 @@ namespace TokenGenerator
     public class Settings
     {
         public string ApiTokenSigningCertNames { get; set; }
-        public Dictionary<string, string> ApiTokenSigningCertNamesDict { get => GetKeyValuePairs(ApiTokenSigningCertNames); }
+        public Dictionary<string, string> ApiTokenSigningCertNamesDict => GetKeyValuePairs(ApiTokenSigningCertNames);
         public string ConsentTokenSigningCertNames { get; set; }
-        public Dictionary<string, string> ConsentTokenSigningCertNamesDict { get => GetKeyValuePairs(ConsentTokenSigningCertNames); }
+        public Dictionary<string, string> ConsentTokenSigningCertNamesDict => GetKeyValuePairs(ConsentTokenSigningCertNames);
         public string BasicAuthorizationUsers { get; set; }
-        public Dictionary<string, string> BasicAuthorizationUsersDict { get => GetKeyValuePairs(BasicAuthorizationUsers); }
+        public Dictionary<string, string> BasicAuthorizationUsersDict => GetKeyValuePairs(BasicAuthorizationUsers);
         public string AuthorizedScope { get; set; }
         public string TokenAuthorizationWellKnownEndpoint { get; set; }
-        public string Environments { get; set; }
-        public Dictionary<string, string> EnvironmentsDict { get => GetKeyValuePairs(Environments); }
+        public string EnvironmentsApiToken { get; set; }
+        public string EnvironmentsConsentToken { get; set; }
+        public Dictionary<string, string> EnvironmentsApiTokenDict => GetKeyValuePairs(EnvironmentsApiToken);
+        public Dictionary<string, string> EnvironmentsConsentTokenDict => GetKeyValuePairs(EnvironmentsConsentToken);
 
         private Dictionary<string, string> GetKeyValuePairs(string stringfieldToSpilt, char fieldSeparator = ';', char keyValueSeparator = ':')
         {

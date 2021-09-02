@@ -1,3 +1,4 @@
+using System;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
@@ -7,20 +8,20 @@ using TokenGenerator.Services.Interfaces;
 
 namespace TokenGenerator
 {
-    public class GetEnterpriseToken
+    public class GetConsentToken
     {
         private readonly IToken tokenHelper;
         private readonly IRequestValidator requestValidator;
         private readonly IAuthorization authorization;
 
-        public GetEnterpriseToken(IToken tokenHelper, IRequestValidator requestValidator, IAuthorization authorization)
+        public GetConsentToken(IToken tokenHelper, IRequestValidator requestValidator, IAuthorization authorization)
         {
             this.tokenHelper = tokenHelper;
             this.requestValidator = requestValidator;
             this.authorization = authorization;
         }
 
-        [FunctionName(nameof(GetEnterpriseToken))]
+        [FunctionName(nameof(GetConsentToken))]
         public async Task<ActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = null)] HttpRequest req)
         {
             ActionResult failedAuthorizationResult = await authorization.Authorize();
@@ -30,19 +31,20 @@ namespace TokenGenerator
             }
 
             requestValidator.ValidateQueryParam("env", true, tokenHelper.IsValidEnvironment, out string env);
-            requestValidator.ValidateQueryParam("scopes", true, tokenHelper.TryParseScopes, out string[] scopes);
-            requestValidator.ValidateQueryParam("org", true, tokenHelper.IsValidIdentifier, out string org);
-            requestValidator.ValidateQueryParam("orgNo", true, tokenHelper.IsValidOrgNo, out string orgNo);
-            requestValidator.ValidateQueryParam("supplierOrgNo", false, tokenHelper.IsValidOrgNo, out string supplierOrgNo);
-            requestValidator.ValidateQueryParam<uint>("ttl", false, uint.TryParse, out uint ttl, 1800);
-            requestValidator.ValidateQueryParam("delegationSource", false, tokenHelper.IsValidUri, out string delegationSource);
+            requestValidator.ValidateQueryParam("serviceCodes", true, tokenHelper.IsValidServiceCodeList, out string[] serviceCodes);
+            requestValidator.ValidateQueryParam("authorizationCode", false, Guid.TryParse, out Guid authorizationCode, Guid.NewGuid());
+            requestValidator.ValidateQueryParam("offeredBy", true, tokenHelper.IsValidPidOrOrgNo, out string offeredBy);
+            requestValidator.ValidateQueryParam("coveredBy", true, tokenHelper.IsValidPidOrOrgNo, out string coveredBy);
+            requestValidator.ValidateQueryParam("handledBy", false, tokenHelper.IsValidPidOrOrgNo, out string handledBy);
+            requestValidator.ValidateQueryParam<uint>("ttl", false, uint.TryParse, out uint ttl, 30);
 
             if (requestValidator.GetErrors().Count > 0)
             {
                  return new BadRequestObjectResult(requestValidator.GetErrors());
             }
-            
-            string token = await tokenHelper.GetEnterpriseToken(env, scopes, org, orgNo, supplierOrgNo, ttl, delegationSource);
+
+            string token = await tokenHelper.GetConsentToken(env, serviceCodes, req.Query, authorizationCode,
+                offeredBy, coveredBy, handledBy, ttl);
 
             if (!string.IsNullOrEmpty(req.Query["dump"]))
             {

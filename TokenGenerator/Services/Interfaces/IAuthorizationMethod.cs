@@ -1,7 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 
-namespace TokenGenerator.Services
+namespace TokenGenerator.Services.Interfaces
 {
     public interface IAuthorizationMethod
     {

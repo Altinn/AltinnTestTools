@@ -4,6 +4,7 @@ using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TokenGenerator.Services;
+using TokenGenerator.Services.Interfaces;
 
 [assembly: FunctionsStartup(typeof(TokenGenerator.Startup))]
 
@@ -11,10 +12,6 @@ namespace TokenGenerator
 {
     internal class Startup : FunctionsStartup
     {
-        public Startup()
-        {
-        }
- 
         public override void Configure(IFunctionsHostBuilder builder)
         {
             var config = new ConfigurationBuilder()

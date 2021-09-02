@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System;
@@ -10,13 +9,15 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using TokenGenerator.Services.Interfaces;
 
 namespace TokenGenerator.Services
 {
     public class Token : IToken
     {
         private readonly Settings settings;
-        private const string validScopeListRegex = @"^[a-z0-9:/_\-,\. ]+$";
+        private const string ValidScopeListRegex = @"^[a-z0-9:/_\-,\. ]+$";
         private readonly ICertificateService certificateHelper;
 
         public Token(IOptions<Settings> settings, ICertificateService certificateHelper)
@@ -120,7 +121,7 @@ namespace TokenGenerator.Services
             return handler.WriteToken(securityToken);
         }
 
-        public async Task<string> GetPersonalToken(string env, string[] scopes, uint userId, uint partyId, string pid, string authLvl, string consumerOrgNo, string userName, string client_amr, uint ttl, string delegationSource)
+        public async Task<string> GetPersonalToken(string env, string[] scopes, uint userId, uint partyId, string pid, string authLvl, string consumerOrgNo, string userName, string clientAmr, uint ttl, string delegationSource)
         {
             var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
             var signingCertificate = await certificateHelper.GetApiTokenSigningCertificate(env);
@@ -138,7 +139,7 @@ namespace TokenGenerator.Services
                 { "urn:altinn:partyid", partyId },
                 { "urn:altinn:authenticatemethod", "NotDefined" },
                 { "urn:altinn:authlevel", authLvl },
-                { "client_amr", client_amr },
+                { "client_amr", clientAmr },
                 { "pid", pid },
                 { "token_type", "Bearer" },
                 { "client_id", Guid.NewGuid().ToString() },
@@ -165,10 +166,69 @@ namespace TokenGenerator.Services
 
         }
 
+        public async Task<string> GetConsentToken(string env, string[] serviceCodes, IQueryCollection queryParameters,
+            Guid authorizationCode, string offeredBy, string coveredBy, string handledBy, uint ttl)
+        {
+            var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
+            var signingCertificate = await certificateHelper.GetConsentTokenSigningCertificate(env);
+            if (signingCertificate?.Thumbprint == null)
+            {
+                throw new ArgumentNullException($"GetApiTokenSigningCertificate({env}) returned null");
+            }
+
+            var securityKey = new X509SecurityKey(signingCertificate);
+            var thumbprintHexBytes = new byte[signingCertificate.Thumbprint.Length / 2];
+            for (var i = 0; i < signingCertificate.Thumbprint.Length; i += 2)
+            {
+                thumbprintHexBytes[i / 2] = Convert.ToByte(signingCertificate.Thumbprint.Substring(i, 2), 16);
+            }
+
+            var kidX5T = Base64UrlEncoder.Encode(thumbprintHexBytes);
+            var header = new JwtHeader(new SigningCredentials(securityKey, SecurityAlgorithms.RsaSha256))
+            {
+                { "x5t", kidX5T }
+            };
+
+            // Override default kid
+            header.Remove("kid");
+            header.Add("kid", kidX5T);
+
+            var claims = new List<Claim>();
+            foreach (var serviceCode in serviceCodes)
+            {
+                claims.Add(new Claim("Services", serviceCode));
+                var metadataParameters = queryParameters.Where(x => x.Key.StartsWith(serviceCode))
+                    .ToDictionary(p => p.Key, p => p.Value);
+                foreach (var (key, value) in metadataParameters)
+                {
+                    claims.Add(new Claim("Services", key + "=" + value));
+                }
+            }
+
+            claims.Add(new Claim("AuthorizationCode", authorizationCode.ToString()));
+            claims.Add(new Claim("OfferedBy", offeredBy));
+            claims.Add(new Claim("CoveredBy", coveredBy));
+            if (handledBy != null)
+            {
+                claims.Add(new Claim("HandledBy", handledBy));
+            }
+            claims.Add(new Claim("DelegatedDate", (dateTimeOffset.ToUnixTimeSeconds() - 10).ToString(), ClaimValueTypes.Integer32));
+            claims.Add(new Claim("ValidToDate", (dateTimeOffset.ToUnixTimeSeconds() + ttl).ToString(), ClaimValueTypes.Integer32));
+            claims.Add(new Claim("iss", "altinn.no"));
+            claims.Add(new Claim("actual_iss", "altinn-test-tools"));
+            claims.Add(new Claim("exp", (dateTimeOffset.ToUnixTimeSeconds() + ttl).ToString(), ClaimValueTypes.Integer32));
+            claims.Add(new Claim("nbf", dateTimeOffset.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer32));
+
+            var securityToken = new JwtSecurityToken(header, new JwtPayload(claims));
+            var handler = new JwtSecurityTokenHandler();
+
+            return handler.WriteToken(securityToken);
+        }
+
         public bool TryParseScopes(string input, out string[] scopes)
         {
             scopes = null;
-            if (string.IsNullOrEmpty(input) || input.Length > 200 || !Regex.IsMatch(input, validScopeListRegex))
+            if (string.IsNullOrEmpty(input) || input.Length > 200 || !Regex.IsMatch(input, ValidScopeListRegex))
             {
                 return false;
             }
@@ -192,14 +252,19 @@ namespace TokenGenerator.Services
             return !string.IsNullOrEmpty(pid) && Regex.IsMatch(pid, "^[0-9]{11}$");
         }
 
-        public bool IsValidAuthLvl(string authlvl)
+        public bool IsValidPidOrOrgNo(string pidOrOrgNo)
         {
-            return authlvl == "3" || authlvl == "4";
+            return IsValidOrgNo(pidOrOrgNo) || IsValidPid(pidOrOrgNo);
+        }
+
+        public bool IsValidAuthLvl(string authLvl)
+        {
+            return authLvl == "3" || authLvl == "4";
         }
 
         public bool IsValidEnvironment(string env)
         {
-            return settings.EnvironmentsDict.ContainsKey(env);
+            return settings.EnvironmentsApiTokenDict.ContainsKey(env);
         }
 
         public bool IsValidUri(string uriString)
@@ -207,10 +272,29 @@ namespace TokenGenerator.Services
             return Uri.TryCreate(uriString, UriKind.Absolute, out _);
         }
 
+        public bool IsValidServiceCodeList(string serviceCodes, out string[] serviceCodeList)
+        {
+            var tmp = new List<string>();
+            foreach (var serviceCode in serviceCodes.Split('.'))
+            {
+                if (!Regex.IsMatch(serviceCode, @"^\w+_\w$"))
+                {
+                    serviceCodeList = new string[] { };
+                    return false;
+                }
+
+                tmp.Add(serviceCode);
+            }
+
+            serviceCodeList = tmp.ToArray();
+
+            return true;
+        }
+
         public string Dump(string token)
         {
-            string[] base64parts = token.Split('.').Take(2).ToArray();
-            string[] jsonparts = base64parts.Select(x =>
+            string[] base64Parts = token.Split('.').Take(2).ToArray();
+            string[] jsonparts = base64Parts.Select(x =>
                 Encoding.ASCII.GetString(
                     Convert.FromBase64String(x + new string('=', (4 - x.Length % 4) % 4))
                 )
@@ -229,12 +313,12 @@ namespace TokenGenerator.Services
               .Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
-        private Dictionary<string, string> GetOrgNoObject(string orgNo)
+        private static Dictionary<string, string> GetOrgNoObject(string orgNo)
         {
             return new Dictionary<string, string>() { { "authority", "iso6523-actorid-upis" }, { "ID", "0192:" + orgNo } };
         }
 
-        private string GetIssuer(string env)
+        private static string GetIssuer(string env)
         {
             string tld = env.ToLowerInvariant().StartsWith("at") ? "cloud" : "no";
             return string.Format("https://platform.{0}.altinn.{1}/authentication/api/v1/openid/", env, tld);

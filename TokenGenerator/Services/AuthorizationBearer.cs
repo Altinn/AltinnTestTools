@@ -10,41 +10,37 @@ using System.Linq;
 using System.Net.Http;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using TokenGenerator.Services.Interfaces;
 
 namespace TokenGenerator.Services
 {
     public class AuthorizationBearer : IAuthorizationBearer
     {
         private readonly Settings settings;
-        private readonly object _cmLockMaskinporten = new object();
-        private volatile ConfigurationManager<OpenIdConnectConfiguration> _configurationManager;
+        private readonly object cmLockMaskinporten = new object();
+        private ConfigurationManager<OpenIdConnectConfiguration> configurationManager;
 
         public ConfigurationManager<OpenIdConnectConfiguration> ConfigurationManager
         {
             get
             {
-                if (_configurationManager == null)
+                if (configurationManager != null) return configurationManager;
+                lock (cmLockMaskinporten)
                 {
-                    lock (_cmLockMaskinporten)
-                    {
-                        if (_configurationManager == null)
-                        {
-                            _configurationManager = new ConfigurationManager<OpenIdConnectConfiguration>(
-                                settings.TokenAuthorizationWellKnownEndpoint,
-                                new OpenIdConnectConfigurationRetriever(),
-                                new HttpClient { Timeout = TimeSpan.FromMilliseconds(10000) });
-                        }
-                    }
+                    configurationManager ??= new ConfigurationManager<OpenIdConnectConfiguration>(
+                        settings.TokenAuthorizationWellKnownEndpoint,
+                        new OpenIdConnectConfigurationRetriever(),
+                        new HttpClient {Timeout = TimeSpan.FromMilliseconds(10000)});
                 }
 
-                return _configurationManager;
+                return configurationManager;
             }
 
             set
             {
-                lock (_cmLockMaskinporten)
+                lock (cmLockMaskinporten)
                 {
-                    _configurationManager = value;
+                    configurationManager = value;
                 }
             }
         }

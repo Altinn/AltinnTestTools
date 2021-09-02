@@ -2,22 +2,19 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Options;
-using TokenGenerator.Services;
 using System.Threading.Tasks;
+using TokenGenerator.Services.Interfaces;
 
 namespace TokenGenerator
 {
     public class GetPersonalToken
     {
-        private readonly Settings settings;
         private readonly IToken tokenHelper;
         private readonly IRequestValidator requestValidator;
         private readonly IAuthorization authorization;
 
-        public GetPersonalToken(IOptions<Settings> settings, IToken tokenHelper, IRequestValidator requestValidator, IAuthorization authorization)
+        public GetPersonalToken(IToken tokenHelper, IRequestValidator requestValidator, IAuthorization authorization)
         {
-            this.settings = settings.Value;
             this.tokenHelper = tokenHelper;
             this.requestValidator = requestValidator;
             this.authorization = authorization;
@@ -33,7 +30,7 @@ namespace TokenGenerator
             }
 
             requestValidator.ValidateQueryParam("env", true, tokenHelper.IsValidEnvironment, out string env);
-            requestValidator.ValidateQueryParam("scopes", false, tokenHelper.TryParseScopes, out string[] scopes, new string[] { "altinn:enduser" });
+            requestValidator.ValidateQueryParam("scopes", false, tokenHelper.TryParseScopes, out string[] scopes, new[] { "altinn:enduser" });
             requestValidator.ValidateQueryParam("userId", true, uint.TryParse, out uint userId);
             requestValidator.ValidateQueryParam("partyId", true, uint.TryParse, out uint partyId);
             requestValidator.ValidateQueryParam("pid", true, tokenHelper.IsValidPid, out string pid);

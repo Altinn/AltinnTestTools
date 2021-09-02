@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using System.Threading.Tasks;
+using TokenGenerator.Services.Interfaces;
 
 namespace TokenGenerator.Services
 {
@@ -44,10 +45,6 @@ namespace TokenGenerator.Services
 
     internal class BasicAuthenticationRequestResult : UnauthorizedResult 
     {
-        public BasicAuthenticationRequestResult() : base()
-        {
-        }
-
         public override void ExecuteResult(ActionContext context)
         {
             base.ExecuteResult(context);

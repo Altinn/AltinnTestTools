@@ -1,9 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
-using System.Text;
+using TokenGenerator.Services.Interfaces;
 
 namespace TokenGenerator.Services
 {
@@ -11,29 +9,29 @@ namespace TokenGenerator.Services
     {
         private readonly HttpRequest req;
 
-        private const string MANDATORY_IS_MISSING = "Parameter must be supplied";
-        private const string FAILED_VALIDATION = "Parameter was supplied with a invalid value";
+        private const string MandatoryIsMissing = "Parameter must be supplied";
+        private const string FailedValidation = "Parameter was supplied with a invalid value";
         private readonly Dictionary<string, string> errors = new Dictionary<string, string>();
 
-        public delegate V ValidatorParser<T, U, V>(T input, out U output);
+        public delegate T ValidatorParser<in TIn, TOut, out T>(TIn input, out TOut output);
 
         public RequestValidator(IHttpContextAccessor contextAccessor)
         {
             req = contextAccessor.HttpContext.Request;
         }
 
-        public void ValidateQueryParam<OutT>(string field, bool isRequired, ValidatorParser<string, OutT, bool> validator, out OutT output, OutT defaultValue = default)
+        public void ValidateQueryParam<TOut>(string field, bool isRequired, ValidatorParser<string, TOut, bool> validator, out TOut output, TOut defaultValue = default)
         {
             output = defaultValue;
             if (string.IsNullOrEmpty(req.Query[field]))
             {
-                if (isRequired) errors.Add(field, MANDATORY_IS_MISSING);
+                if (isRequired) errors.Add(field, MandatoryIsMissing);
                 return;
             }
 
             if (!validator(req.Query[field], out output))
             {
-                errors.Add(field, FAILED_VALIDATION);
+                errors.Add(field, FailedValidation);
             }
         }
 
@@ -42,13 +40,13 @@ namespace TokenGenerator.Services
             output = defaultValue;
             if (string.IsNullOrEmpty(req.Query[field]))
             {
-                if (isRequired) errors.Add(field, MANDATORY_IS_MISSING);
+                if (isRequired) errors.Add(field, MandatoryIsMissing);
                 return;
             }
 
             if (!validator(req.Query[field]))
             {
-                errors.Add(field, FAILED_VALIDATION);
+                errors.Add(field, FailedValidation);
             }
             else
             {

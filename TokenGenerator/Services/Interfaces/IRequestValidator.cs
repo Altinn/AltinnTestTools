@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace TokenGenerator.Services
+namespace TokenGenerator.Services.Interfaces
 {
     public interface IRequestValidator
     {

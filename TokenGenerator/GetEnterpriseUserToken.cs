@@ -4,7 +4,7 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Options;
 using System.Threading.Tasks;
-using TokenGenerator.Services;
+using TokenGenerator.Services.Interfaces;
 
 namespace TokenGenerator
 {

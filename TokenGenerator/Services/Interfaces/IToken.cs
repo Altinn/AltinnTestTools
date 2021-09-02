@@ -1,19 +1,24 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
-namespace TokenGenerator.Services
+namespace TokenGenerator.Services.Interfaces
 {
     public interface IToken
     {
         Task<string> GetEnterpriseToken(string env, string[] scopes, string org, string orgNo, string supplierOrgNo, uint ttl, string delegationSource);
         Task<string> GetEnterpriseUserToken(string env, string[] scopes, string org, string orgNo, string supplierOrgNo, uint partyId, uint userId, string userName, uint ttl, string delegationSource);
-        Task<string> GetPersonalToken(string env, string[] scopes, uint userId, uint partyId, string pid, string authLvl, string consumerOrgNo, string userName, string client_amr, uint ttl, string delegationSource);
+        Task<string> GetPersonalToken(string env, string[] scopes, uint userId, uint partyId, string pid, string authLvl, string consumerOrgNo, string userName, string clientAmr, uint ttl, string delegationSource);
+        Task<string> GetConsentToken(string env, string[] serviceCodes, IQueryCollection queryParameters, Guid authorizationCode, string offeredBy, string coveredBy, string handledBy, uint ttl);
         string Dump(string token);
-        bool IsValidAuthLvl(string authlvl);
+        bool IsValidAuthLvl(string authLvl);
         bool IsValidIdentifier(string identifier);
         bool IsValidOrgNo(string orgNo);
         bool IsValidPid(string pid);
+        bool IsValidPidOrOrgNo(string pidOrOrgNo);
         bool IsValidEnvironment(string env);
         bool IsValidUri(string uriString);
+        bool IsValidServiceCodeList(string serviceCodes, out string[] serviceCodeList);
         bool TryParseScopes(string input, out string[] scopes);
     }
 }

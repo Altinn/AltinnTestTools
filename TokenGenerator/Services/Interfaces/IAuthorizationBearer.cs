@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace TokenGenerator.Services
+﻿namespace TokenGenerator.Services.Interfaces
 {
     public interface IAuthorizationBearer : IAuthorizationMethod
     {

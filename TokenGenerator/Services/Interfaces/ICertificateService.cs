@@ -1,7 +1,7 @@
 ﻿using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 
-namespace TokenGenerator.Services
+namespace TokenGenerator.Services.Interfaces
 {
     public interface ICertificateService
     {
