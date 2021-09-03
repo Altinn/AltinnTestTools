@@ -277,7 +277,7 @@ namespace TokenGenerator.Services
             var tmp = new List<string>();
             foreach (var serviceCode in serviceCodes.Split('.'))
             {
-                if (!Regex.IsMatch(serviceCode, @"^\w+_\w$"))
+                if (!Regex.IsMatch(serviceCode, @"^\w+_\w+$"))
                 {
                     serviceCodeList = new string[] { };
                     return false;
