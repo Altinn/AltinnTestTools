@@ -228,7 +228,7 @@ namespace TokenGenerator.Services
         public bool TryParseScopes(string input, out string[] scopes)
         {
             scopes = null;
-            if (string.IsNullOrEmpty(input) || input.Length > 200 || !Regex.IsMatch(input, ValidScopeListRegex))
+            if (string.IsNullOrEmpty(input) || input.Length > 500 || !Regex.IsMatch(input, ValidScopeListRegex))
             {
                 return false;
             }
@@ -239,7 +239,7 @@ namespace TokenGenerator.Services
 
         public bool IsValidIdentifier(string identifier)
         {
-            return !string.IsNullOrEmpty(identifier) && identifier.Length <= 50 && Regex.IsMatch(identifier, "^[a-z]+$");
+            return !string.IsNullOrEmpty(identifier) && identifier.Length <= 50 && Regex.IsMatch(identifier, "^[a-z0-9]+$");
         }
 
         public bool IsValidOrgNo(string orgNo)

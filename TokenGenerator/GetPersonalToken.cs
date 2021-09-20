@@ -35,7 +35,7 @@ namespace TokenGenerator
             requestValidator.ValidateQueryParam("partyId", true, uint.TryParse, out uint partyId);
             requestValidator.ValidateQueryParam("pid", true, tokenHelper.IsValidPid, out string pid);
             requestValidator.ValidateQueryParam("authLvl", false, tokenHelper.IsValidAuthLvl, out string authLvl, "3");
-            requestValidator.ValidateQueryParam("consumerOrgNo", false, tokenHelper.IsValidAuthLvl, out string consumerOrgNo, "991825827");
+            requestValidator.ValidateQueryParam("consumerOrgNo", false, tokenHelper.IsValidPidOrOrgNo, out string consumerOrgNo, "991825827");
             requestValidator.ValidateQueryParam("userName", false, tokenHelper.IsValidIdentifier, out string userName, "");
             requestValidator.ValidateQueryParam("clientAmr", false, tokenHelper.IsValidIdentifier, out string clientAmr, "virksomhetssertifikat");
             requestValidator.ValidateQueryParam<uint>("ttl", false, uint.TryParse, out uint ttl, 1800);
