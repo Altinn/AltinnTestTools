@@ -133,10 +133,6 @@ namespace TokenGenerator.Services
 
             var payload = new JwtPayload
             {
-                { "nameid", userId },
-                { "urn:altinn:userid", userId },
-                { "urn:altinn:username", userName },
-                { "urn:altinn:partyid", partyId },
                 { "urn:altinn:authenticatemethod", "NotDefined" },
                 { "urn:altinn:authlevel", authLvl },
                 { "client_amr", clientAmr },
@@ -157,6 +153,19 @@ namespace TokenGenerator.Services
             if (!string.IsNullOrEmpty(delegationSource))
             {
                 payload.Add("delegation_source", delegationSource);
+            }
+            
+            if (userId != 0) {
+                payload.Add("nameid", userId);
+                payload.Add("urn:altinn:userid", userId);
+            }
+            
+            if (partyId != 0) {
+                payload.Add("urn:altinn:partyid", partyId);
+            }
+
+            if (userName != "") {
+                payload.Add("urn:altinn:username", userName);
             }
 
             var securityToken = new JwtSecurityToken(header, payload);
