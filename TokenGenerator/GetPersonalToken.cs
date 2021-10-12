@@ -31,7 +31,7 @@ namespace TokenGenerator
 
             requestValidator.ValidateQueryParam("env", true, tokenHelper.IsValidEnvironment, out string env);
             requestValidator.ValidateQueryParam("scopes", false, tokenHelper.TryParseScopes, out string[] scopes, new[] { "altinn:enduser" });
-            requestValidator.ValidateQueryParam("userId", true, uint.TryParse, out uint userId);
+            requestValidator.ValidateQueryParam("userId", false, uint.TryParse, out uint userId);
             requestValidator.ValidateQueryParam("partyId", true, uint.TryParse, out uint partyId);
             requestValidator.ValidateQueryParam("pid", true, tokenHelper.IsValidPid, out string pid);
             requestValidator.ValidateQueryParam("authLvl", false, tokenHelper.IsValidAuthLvl, out string authLvl, "3");
