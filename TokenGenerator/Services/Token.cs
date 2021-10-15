@@ -234,6 +234,32 @@ namespace TokenGenerator.Services
             return handler.WriteToken(securityToken);
         }
 
+        public async Task<string> GetPlatformToken(string env, string appClaim, uint ttl)
+        {
+            var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
+            var signingCertificate = await certificateHelper.GetApiTokenSigningCertificate(env);
+            var securityKey = new X509SecurityKey(signingCertificate);
+            var header = new JwtHeader(new SigningCredentials(securityKey, SecurityAlgorithms.RsaSha256))
+            {
+               { "x5c", signingCertificate.Thumbprint }
+            };
+
+            var payload = new JwtPayload
+            {
+                { "urn:altinn:app", appClaim },
+                { "exp", dateTimeOffset.ToUnixTimeSeconds() + ttl },
+                { "iat", dateTimeOffset.ToUnixTimeSeconds() },
+                { "iss", GetPlatformIssuer(env) },
+                { "actual_iss", "altinn-test-tools" },
+                { "nbf", dateTimeOffset.ToUnixTimeSeconds() },
+            };
+
+            var securityToken = new JwtSecurityToken(header, payload);
+            var handler = new JwtSecurityTokenHandler();
+
+            return handler.WriteToken(securityToken);
+        }
+
         public bool TryParseScopes(string input, out string[] scopes)
         {
             scopes = null;
@@ -249,6 +275,11 @@ namespace TokenGenerator.Services
         public bool IsValidIdentifier(string identifier)
         {
             return !string.IsNullOrEmpty(identifier) && identifier.Length <= 50 && Regex.IsMatch(identifier, "^[a-z0-9]+$");
+        }
+
+        public bool IsValidDottedIdentifier(string identifier)
+        {
+            return !string.IsNullOrEmpty(identifier) && identifier.Length <= 50 && Regex.IsMatch(identifier, @"^(?:[a-z0-9]\.?)+[a-z0-9]$");
         }
 
         public bool IsValidOrgNo(string orgNo)
@@ -330,7 +361,13 @@ namespace TokenGenerator.Services
         private static string GetIssuer(string env)
         {
             string tld = env.ToLowerInvariant().StartsWith("at") ? "cloud" : "no";
-            return string.Format("https://platform.{0}.altinn.{1}/authentication/api/v1/openid/", env, tld);
+            return $"https://platform.{env}.altinn.{tld}/authentication/api/v1/openid/";
+        }
+
+        private static string GetPlatformIssuer(string env)
+        {
+            string tld = env.ToLowerInvariant().StartsWith("at") ? "cloud" : "no";
+            return $"{env}.altinn.{tld}";
         }
     }
 }

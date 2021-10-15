@@ -10,9 +10,11 @@ namespace TokenGenerator.Services.Interfaces
         Task<string> GetEnterpriseUserToken(string env, string[] scopes, string org, string orgNo, string supplierOrgNo, uint partyId, uint userId, string userName, uint ttl, string delegationSource);
         Task<string> GetPersonalToken(string env, string[] scopes, uint userId, uint partyId, string pid, string authLvl, string consumerOrgNo, string userName, string clientAmr, uint ttl, string delegationSource);
         Task<string> GetConsentToken(string env, string[] serviceCodes, IQueryCollection queryParameters, Guid authorizationCode, string offeredBy, string coveredBy, string handledBy, uint ttl);
+        Task<string> GetPlatformToken(string env, string appClaim, uint ttl);
         string Dump(string token);
         bool IsValidAuthLvl(string authLvl);
         bool IsValidIdentifier(string identifier);
+        bool IsValidDottedIdentifier(string identifier);
         bool IsValidOrgNo(string orgNo);
         bool IsValidPid(string pid);
         bool IsValidPidOrOrgNo(string pidOrOrgNo);
