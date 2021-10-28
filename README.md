@@ -7,7 +7,7 @@ Simple HTTP API for generating arbitrary enterprise and person access tokens for
 
 ### Access
 
-The application requires authentication. Currently only available for internal use in Digdir. Contact the repo owner for more information.
+The application requires authentication. See https://altinn.github.io/docs/api/rest/kom-i-gang/tokengenerator/ for more information.
 
 ### Usage:
 
