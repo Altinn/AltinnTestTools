@@ -5,6 +5,6 @@ namespace TokenGenerator.Services.Interfaces
 {
     public interface IAuthorizationMethod
     {
-        Task<ActionResult> IsAuthorized(string authorizationString);
+        Task<ActionResult> IsAuthorized(string authorizationString, string requiredScope);
     }
 }

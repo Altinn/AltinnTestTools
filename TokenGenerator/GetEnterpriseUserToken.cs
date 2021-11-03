@@ -26,7 +26,7 @@ namespace TokenGenerator
         [FunctionName(nameof(GetEnterpriseUserToken))]
         public async Task<ActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = null)] HttpRequest req)
         {
-            ActionResult failedAuthorizationResult = await authorization.Authorize();
+            ActionResult failedAuthorizationResult = await authorization.Authorize(settings.AuthorizedScopeEnterpriseUser);
             if (failedAuthorizationResult != null)
             {
                 return failedAuthorizationResult;

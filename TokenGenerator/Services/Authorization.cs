@@ -2,20 +2,24 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using System.Threading.Tasks;
+using Microsoft.Build.Framework;
+using Microsoft.Extensions.Logging;
 using TokenGenerator.Services.Interfaces;
 
 namespace TokenGenerator.Services
 {
     public class Authorization : IAuthorization
     {
+        private readonly ILogger<Authorization> logger;
         private readonly HttpContext ctx;
 
-        public Authorization(IHttpContextAccessor contextAccessor)
+        public Authorization(IHttpContextAccessor contextAccessor, ILogger<Authorization> logger)
         {
+            this.logger = logger;
             ctx = contextAccessor.HttpContext;
         }
 
-        public async Task<ActionResult> Authorize()
+        public async Task<ActionResult> Authorize(string requiredScope)
         {
             if (!ctx.Request.Headers.ContainsKey("Authorization"))
             {
@@ -39,7 +43,14 @@ namespace TokenGenerator.Services
                 return new BasicAuthenticationRequestResult();
             }
 
-            return await handler.IsAuthorized(parts[1]);
+            ActionResult result = await handler.IsAuthorized(parts[1], requiredScope);
+            if (result == null)
+            {
+                // Successfully authenticated, log who did this
+                logger.LogInformation("Authenticated call by '{party}' to '{endpoint}' with parameters '{query}'", ctx.Items["AuthenticatedParty"], ctx.Request.Path.ToString(), ctx.Request.QueryString.ToString());
+            }
+
+            return result;
         }
     }
 

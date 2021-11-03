@@ -3,6 +3,7 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 using TokenGenerator.Services.Interfaces;
 
 namespace TokenGenerator
@@ -12,18 +13,20 @@ namespace TokenGenerator
         private readonly IToken tokenHelper;
         private readonly IRequestValidator requestValidator;
         private readonly IAuthorization authorization;
+        private readonly Settings settings;
 
-        public GetPlatformToken(IToken tokenHelper, IRequestValidator requestValidator, IAuthorization authorization)
+        public GetPlatformToken(IToken tokenHelper, IRequestValidator requestValidator, IAuthorization authorization, IOptions<Settings> settings)
         {
             this.tokenHelper = tokenHelper;
             this.requestValidator = requestValidator;
             this.authorization = authorization;
+            this.settings = settings.Value;
         }
 
         [FunctionName(nameof(GetPlatformToken))]
         public async Task<ActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = null)] HttpRequest req)
         {
-            ActionResult failedAuthorizationResult = await authorization.Authorize();
+            ActionResult failedAuthorizationResult = await authorization.Authorize(settings.AuthorizedScopePlatform);
             if (failedAuthorizationResult != null)
             {
                 return failedAuthorizationResult;

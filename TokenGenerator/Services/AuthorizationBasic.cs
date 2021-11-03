@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using TokenGenerator.Services.Interfaces;
@@ -10,13 +11,15 @@ namespace TokenGenerator.Services
     public class AuthorizationBasic : IAuthorizationBasic
     {
         private readonly Settings settings;
+        private readonly HttpContext httpContext;
 
-        public AuthorizationBasic(IOptions<Settings> settings)
+        public AuthorizationBasic(IOptions<Settings> settings, IHttpContextAccessor contextAccessor)
         {
             this.settings = settings.Value;
+            this.httpContext = contextAccessor.HttpContext;
         }
 
-        public async Task<ActionResult> IsAuthorized(string authorizationString)
+        public async Task<ActionResult> IsAuthorized(string authorizationString, string _)
         {
             if (!ParseUserNamePassword(authorizationString, out string userName, out string password))
             {
@@ -26,6 +29,8 @@ namespace TokenGenerator.Services
             if (!IsUserAuthorized(userName, password)) {
                 return new BasicAuthenticationRequestResult();
             }
+
+            httpContext.Items["AuthenticatedParty"] = userName;
 
             return await Task.FromResult<ActionResult>(null);
         }

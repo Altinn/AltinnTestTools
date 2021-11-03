@@ -13,6 +13,11 @@ namespace TokenGenerator
         public string BasicAuthorizationUsers { get; set; }
         public Dictionary<string, string> BasicAuthorizationUsersDict => GetKeyValuePairs(BasicAuthorizationUsers);
         public string AuthorizedScope { get; set; }
+        public string AuthorizedScopeConsent { get; set; }
+        public string AuthorizedScopeEnterprise { get; set; }
+        public string AuthorizedScopeEnterpriseUser { get; set; }
+        public string AuthorizedScopePersonal { get; set; }
+        public string AuthorizedScopePlatform { get; set; }
         public string TokenAuthorizationWellKnownEndpoint { get; set; }
         public string EnvironmentsApiToken { get; set; }
         public string EnvironmentsConsentToken { get; set; }
