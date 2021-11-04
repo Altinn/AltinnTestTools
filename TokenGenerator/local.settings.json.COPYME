@@ -1,0 +1,21 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet"
+  },
+  "Settings": {
+    "ApiTokenSigningCertNames": "dev:altinn-testtools-api-token-signing-cert",
+    "AuthorizedScope": "altinn:testtools/tokengenerator",
+    "AuthorizedScopeEnterprise": "altinn:testtools/tokengenerator/enterprise",
+    "AuthorizedScopeEnterpriseUser": "altinn:testtools/tokengenerator/enterpriseuser",
+    "AuthorizedScopePersonal": "altinn:testtools/tokengenerator/personal",
+    "AuthorizedScopePlatform": "altinn:testtools/tokengenerator/platform",
+    "AuthorizedScopeConsent": "altinn:testtools/tokengenerator/consent",
+    "BasicAuthorizationUsers": "myusername:mypassword",
+    "ConsentTokenSigningCertNames": "dev:altinn-testtools-consent-token-signing-cert",
+    "EnvironmentsApiToken": "dev:altinn-testtools-kv",
+    "EnvironmentsConsentToken": "dev:altinn-testtools-kv",
+    "TokenAuthorizationWellKnownEndpoint": "https://ver2.maskinporten.no/.well-known/oauth-authorization-server"
+  }
+}
