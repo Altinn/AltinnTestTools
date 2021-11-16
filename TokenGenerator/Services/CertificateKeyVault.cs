@@ -75,7 +75,7 @@ namespace TokenGenerator.Services
                 _certificates[keyVaultName].AddRange(certificates);
 
                 // Reuse the same list of certificates for 1 hour.
-                _certificateUpdateTime = DateTime.Now.AddHours(1);
+                _certificateUpdateTime = DateTime.Now.AddSeconds(1);
 
                 _certificates[keyVaultName] =
                     _certificates[keyVaultName].OrderByDescending(cer => cer.NotBefore).ToList();
@@ -102,11 +102,7 @@ namespace TokenGenerator.Services
                     continue;
                 }
 
-                KeyVaultCertificateWithPolicy certificate = await certificateClient.GetCertificateAsync(certificateName);
-                if (certificate.Policy?.Exportable != true)
-                {
-                    continue;
-                }
+                KeyVaultCertificate certificate = await certificateClient.GetCertificateVersionAsync(certificateName, cert.Version);
 
                 // Parse the secret ID and version to retrieve the private key.
                 var segments = certificate.SecretId.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
