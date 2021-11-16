@@ -75,7 +75,7 @@ namespace TokenGenerator.Services
                 _certificates[keyVaultName].AddRange(certificates);
 
                 // Reuse the same list of certificates for 1 hour.
-                _certificateUpdateTime = DateTime.Now.AddSeconds(1);
+                _certificateUpdateTime = DateTime.Now.AddHours(1);
 
                 _certificates[keyVaultName] =
                     _certificates[keyVaultName].OrderByDescending(cer => cer.NotBefore).ToList();
