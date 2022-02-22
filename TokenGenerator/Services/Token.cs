@@ -249,7 +249,7 @@ namespace TokenGenerator.Services
                 { "urn:altinn:app", appClaim },
                 { "exp", dateTimeOffset.ToUnixTimeSeconds() + ttl },
                 { "iat", dateTimeOffset.ToUnixTimeSeconds() },
-                { "iss", GetPlatformIssuer(env) },
+                { "iss", GetIssuer(env) },
                 { "actual_iss", "altinn-test-tools" },
                 { "nbf", dateTimeOffset.ToUnixTimeSeconds() },
             };
@@ -362,12 +362,6 @@ namespace TokenGenerator.Services
         {
             string tld = env.ToLowerInvariant().StartsWith("at") ? "cloud" : "no";
             return $"https://platform.{env}.altinn.{tld}/authentication/api/v1/openid/";
-        }
-
-        private static string GetPlatformIssuer(string env)
-        {
-            string tld = env.ToLowerInvariant().StartsWith("at") ? "cloud" : "no";
-            return $"{env}.altinn.{tld}";
         }
     }
 }
