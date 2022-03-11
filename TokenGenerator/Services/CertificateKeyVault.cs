@@ -66,13 +66,7 @@ namespace TokenGenerator.Services
                     return _certificates[keyVaultName];
                 }
 
-                if (!_certificates.ContainsKey(keyVaultName))
-                {
-                    _certificates[keyVaultName] = new List<X509Certificate2>();
-                }
-
-                List<X509Certificate2> certificates = await GetAllCertificateVersions(keyVaultName, certificateName);
-                _certificates[keyVaultName].AddRange(certificates);
+                _certificates[keyVaultName] = await GetAllCertificateVersions(keyVaultName, certificateName);
 
                 // Reuse the same list of certificates for 1 hour.
                 _certificateUpdateTime = DateTime.Now.AddHours(1);
@@ -120,7 +114,7 @@ namespace TokenGenerator.Services
                 if (!"application/x-pkcs12".Equals(secret.Properties.ContentType,
                         StringComparison.InvariantCultureIgnoreCase)) continue;
 
-                certificates.Add(new X509Certificate2(Convert.FromBase64String(secret.Value)));
+                certificates.Add(new X509Certificate2(Convert.FromBase64String(secret.Value), (string)null, X509KeyStorageFlags.EphemeralKeySet));
             }
             return certificates;
         }
