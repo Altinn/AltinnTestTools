@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.IO;
+using System.Linq;
 using System.Threading;
 using Azure.Security.KeyVault.Certificates;
 using Azure.Security.KeyVault.Secrets;
@@ -114,7 +115,17 @@ namespace TokenGenerator.Services
                 if (!"application/x-pkcs12".Equals(secret.Properties.ContentType,
                         StringComparison.InvariantCultureIgnoreCase)) continue;
 
-                certificates.Add(new X509Certificate2(Convert.FromBase64String(secret.Value), (string)null, X509KeyStorageFlags.EphemeralKeySet));
+                // To avoid temp files not being cleaned up, see tip #5 at https://paulstovell.com/x509certificate2/
+                var file = Path.Combine(Path.GetTempPath(), "altinn-tokengenerator-" + Guid.NewGuid());
+                try
+                {
+                    await File.WriteAllBytesAsync(file, Convert.FromBase64String(secret.Value));
+                    certificates.Add(new X509Certificate2(file, (string)null, X509KeyStorageFlags.EphemeralKeySet));
+                }
+                finally
+                {
+                    File.Delete(file);
+                }
             }
             return certificates;
         }
