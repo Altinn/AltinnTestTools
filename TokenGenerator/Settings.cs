@@ -19,6 +19,8 @@ namespace TokenGenerator
         public string AuthorizedScopePersonal { get; set; }
         public string AuthorizedScopePlatform { get; set; }
         public string TokenAuthorizationWellKnownEndpoint { get; set; }
+
+        public string TokenAuxiliaryAuthorizationWellKnownEndpoint { get; set; }
         public string EnvironmentsApiToken { get; set; }
         public string EnvironmentsConsentToken { get; set; }
         public Dictionary<string, string> EnvironmentsApiTokenDict => GetKeyValuePairs(EnvironmentsApiToken);

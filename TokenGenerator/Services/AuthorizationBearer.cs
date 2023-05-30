@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using System;
+using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Net.Http;
@@ -21,10 +22,12 @@ namespace TokenGenerator.Services
     {
         private readonly Settings settings;
         private readonly object cmLockMaskinporten = new object();
+        private readonly object cmLockMaskinportenAux = new object();
         private ConfigurationManager<OpenIdConnectConfiguration> configurationManager;
+        private ConfigurationManager<OpenIdConnectConfiguration> configurationManagerAux;
         private readonly HttpContext httpContext;
 
-        public ConfigurationManager<OpenIdConnectConfiguration> ConfigurationManager
+        private ConfigurationManager<OpenIdConnectConfiguration> ConfigurationManager
         {
             get
             {
@@ -39,13 +42,22 @@ namespace TokenGenerator.Services
 
                 return configurationManager;
             }
+        }
 
-            set
+        private ConfigurationManager<OpenIdConnectConfiguration> ConfigurationManagerAux
+        {
+            get
             {
-                lock (cmLockMaskinporten)
+                if (configurationManagerAux != null) return configurationManagerAux;
+                lock (cmLockMaskinportenAux)
                 {
-                    configurationManager = value;
+                    configurationManagerAux ??= new ConfigurationManager<OpenIdConnectConfiguration>(
+                        settings.TokenAuxiliaryAuthorizationWellKnownEndpoint,
+                        new OpenIdConnectConfigurationRetriever(),
+                        new HttpClient {Timeout = TimeSpan.FromMilliseconds(10000)});
                 }
+
+                return configurationManagerAux;
             }
         }
 
@@ -69,14 +81,20 @@ namespace TokenGenerator.Services
                 }
 
                 OpenIdConnectConfiguration configuration = await ConfigurationManager.GetConfigurationAsync();
+                var signingKeys = new List<SecurityKey>();
+                signingKeys.AddRange(configuration.SigningKeys);
+                if (settings.TokenAuxiliaryAuthorizationWellKnownEndpoint != null)
+                {
+                    OpenIdConnectConfiguration configurationAux = await ConfigurationManagerAux.GetConfigurationAsync();
+                    signingKeys.AddRange(configurationAux.SigningKeys);
+                }
 
                 TokenValidationParameters parameters = new TokenValidationParameters()
                 {
                     RequireExpirationTime = true,
-                    ValidIssuer = configuration.Issuer,
-                    ValidateIssuer = true,
+                    ValidateIssuer = false,
                     ValidateAudience = false,
-                    IssuerSigningKeys = configuration.SigningKeys,
+                    IssuerSigningKeys = signingKeys,
                     ValidateIssuerSigningKey = true,
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.FromSeconds(1)
