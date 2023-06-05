@@ -34,7 +34,7 @@ namespace TokenGenerator
 
             requestValidator.ValidateQueryParam("env", true, tokenHelper.IsValidEnvironment, out string env);
             requestValidator.ValidateQueryParam("scopes", true, tokenHelper.TryParseScopes, out string[] scopes);
-            requestValidator.ValidateQueryParam("org", true, tokenHelper.IsValidIdentifier, out string org);
+            requestValidator.ValidateQueryParam("org", false, tokenHelper.IsValidIdentifier, out string org);
             requestValidator.ValidateQueryParam("orgNo", true, tokenHelper.IsValidOrgNo, out string orgNo);
             requestValidator.ValidateQueryParam("supplierOrgNo", false, tokenHelper.IsValidOrgNo, out string supplierOrgNo);
             requestValidator.ValidateQueryParam<uint>("ttl", false, uint.TryParse, out uint ttl, 1800);
