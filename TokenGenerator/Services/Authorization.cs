@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using System.Threading.Tasks;
-using Microsoft.Build.Framework;
 using Microsoft.Extensions.Logging;
 using TokenGenerator.Services.Interfaces;
 
