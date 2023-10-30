@@ -1,20 +1,21 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
+using System.Security.Cryptography.X509Certificates;
+
+using Azure.Identity;
 using Azure.Security.KeyVault.Certificates;
 using Azure.Security.KeyVault.Secrets;
+
+using Microsoft.Extensions.Options;
+
 using TokenGenerator.Services.Interfaces;
 
 namespace TokenGenerator.Services
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Security.Cryptography.X509Certificates;
-    using System.Threading.Tasks;
-    using Azure.Identity;
-
-    using Microsoft.Extensions.Options;
-
     public class CertificateKeyVault : ICertificateService
     {
         private readonly Settings settings;
@@ -55,26 +56,40 @@ namespace TokenGenerator.Services
             return GetLatestCertificateWithRolloverDelay(certificates, 1);
         }
 
+        public async Task<X509Certificate2> GetPlatformAccessTokenSigningCertificate(string environment)
+        {
+            if (string.IsNullOrEmpty(environment) || settings.EnvironmentsApiTokenDict[environment] == null || settings.PlatformAccessTokenSigningCertNamesDict[environment] == null)
+            {
+                throw new ArgumentException("Invalid environment");
+            }
+
+            var certificates = await GetCertificates(settings.EnvironmentsApiTokenDict[environment], settings.PlatformAccessTokenSigningCertNamesDict[environment]);
+
+            return GetLatestCertificateWithRolloverDelay(certificates, 1);
+        }
+
         private async Task<List<X509Certificate2>> GetCertificates(string keyVaultName, string certificateName)
         {
             await _semaphore.WaitAsync();
 
+            string cacheKey = string.Concat(keyVaultName, certificateName);
+
             try
             {
-                if (_certificateUpdateTime > DateTime.Now && _certificates.ContainsKey(keyVaultName) &&
-                    _certificates[keyVaultName].Count > 0)
+                if (_certificateUpdateTime > DateTime.Now && _certificates.ContainsKey(cacheKey) &&
+                    _certificates[cacheKey].Count > 0)
                 {
-                    return _certificates[keyVaultName];
+                    return _certificates[cacheKey];
                 }
 
-                _certificates[keyVaultName] = await GetAllCertificateVersions(keyVaultName, certificateName);
+                _certificates[cacheKey] = await GetAllCertificateVersions(keyVaultName, certificateName);
 
                 // Reuse the same list of certificates for 1 hour.
                 _certificateUpdateTime = DateTime.Now.AddHours(1);
 
-                _certificates[keyVaultName] =
-                    _certificates[keyVaultName].OrderByDescending(cer => cer.NotBefore).ToList();
-                return _certificates[keyVaultName];
+                _certificates[cacheKey] =
+                    _certificates[cacheKey].OrderByDescending(cer => cer.NotBefore).ToList();
+                return _certificates[cacheKey];
             }
             finally
             {

@@ -1,15 +1,19 @@
-﻿using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+
+using Newtonsoft.Json;
+
 using TokenGenerator.Services.Interfaces;
 
 namespace TokenGenerator.Services
@@ -234,30 +238,31 @@ namespace TokenGenerator.Services
             return handler.WriteToken(securityToken);
         }
 
+        /// <summary>
+        /// Generates a type of AccessToken token and signing it with the same certificate as used by Authentication.
+        /// </summary>
+        /// <param name="env">The environment id.</param>
+        /// <param name="appClaim">The name of the app.</param>
+        /// <param name="ttl">Time to live.</param>
         public async Task<string> GetPlatformToken(string env, string appClaim, uint ttl)
         {
-            var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
+            string issuer = GetIssuer(env);
             var signingCertificate = await certificateHelper.GetApiTokenSigningCertificate(env);
-            var securityKey = new X509SecurityKey(signingCertificate);
-            var header = new JwtHeader(new SigningCredentials(securityKey, SecurityAlgorithms.RsaSha256))
-            {
-               { "x5c", signingCertificate.Thumbprint }
-            };
+            return CreateAccessToken(appClaim, ttl, issuer, signingCertificate);
+        }
 
-            var payload = new JwtPayload
-            {
-                { "urn:altinn:app", appClaim },
-                { "exp", dateTimeOffset.ToUnixTimeSeconds() + ttl },
-                { "iat", dateTimeOffset.ToUnixTimeSeconds() },
-                { "iss", GetIssuer(env) },
-                { "actual_iss", "altinn-test-tools" },
-                { "nbf", dateTimeOffset.ToUnixTimeSeconds() },
-            };
-
-            var securityToken = new JwtSecurityToken(header, payload);
-            var handler = new JwtSecurityTokenHandler();
-
-            return handler.WriteToken(securityToken);
+        /// <summary>
+        /// Generates a "propper" AccessToken token and signing it with the same platform access token certificate.
+        /// </summary>
+        /// <remarks>The issuer is hard coded to <c>platform</c>. The value is used by AccessTokenHandler to identify
+        /// correct public key when validating the token signature.</remarks>
+        /// <param name="env">The environment id.</param>
+        /// <param name="appClaim">The name of the platform application.</param>
+        /// <param name="ttl">Time to live.</param>
+        public async Task<string> GetPlatformAccessToken(string env, string appClaim, uint ttl)
+        {
+            var signingCertificate = await certificateHelper.GetPlatformAccessTokenSigningCertificate(env);
+            return CreateAccessToken(appClaim, ttl, "platform", signingCertificate);
         }
 
         public bool TryParseScopes(string input, out string[] scopes)
@@ -346,6 +351,7 @@ namespace TokenGenerator.Services
         }
 
         private readonly Random random = new Random();
+
         private string RandomString(int length)
         {
             const string chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-";
@@ -362,6 +368,31 @@ namespace TokenGenerator.Services
         {
             string tld = env.ToLowerInvariant().StartsWith("at") ? "cloud" : "no";
             return $"https://platform.{env}.altinn.{tld}/authentication/api/v1/openid/";
+        }
+
+        private static string CreateAccessToken(string appClaim, uint ttl, string issuer, X509Certificate2 signingCertificate)
+        {
+            var securityKey = new X509SecurityKey(signingCertificate);
+            var header = new JwtHeader(new SigningCredentials(securityKey, SecurityAlgorithms.RsaSha256))
+            {
+               { "x5c", signingCertificate.Thumbprint }
+            };
+
+            var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
+            var payload = new JwtPayload
+            {
+                { "urn:altinn:app", appClaim },
+                { "exp", dateTimeOffset.ToUnixTimeSeconds() + ttl },
+                { "iat", dateTimeOffset.ToUnixTimeSeconds() },
+                { "iss", issuer },
+                { "actual_iss", "altinn-test-tools" },
+                { "nbf", dateTimeOffset.ToUnixTimeSeconds() },
+            };
+
+            var securityToken = new JwtSecurityToken(header, payload);
+            var handler = new JwtSecurityTokenHandler();
+
+            return handler.WriteToken(securityToken);
         }
     }
 }
