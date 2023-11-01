@@ -7,5 +7,6 @@ namespace TokenGenerator.Services.Interfaces
     {
         Task<X509Certificate2> GetApiTokenSigningCertificate(string environment);
         Task<X509Certificate2> GetConsentTokenSigningCertificate(string environment);
+        Task<X509Certificate2> GetPlatformAccessTokenSigningCertificate(string environment);
     }
 }

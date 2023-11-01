@@ -52,5 +52,10 @@ namespace TokenGenerator.Services
 
             return await Task.FromResult(consentTokenSigningCertificate);
         }
+
+        public Task<X509Certificate2> GetPlatformAccessTokenSigningCertificate(string environment)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

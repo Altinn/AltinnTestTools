@@ -6,6 +6,7 @@
   },
   "Settings": {
     "ApiTokenSigningCertNames": "dev:altinn-testtools-api-token-signing-cert",
+    "PlatformAccessTokenSigningCertNames": "dev:altinn-testtools-api-token-signing-cert",
     "AuthorizedScope": "altinn:testtools/tokengenerator",
     "AuthorizedScopeEnterprise": "altinn:testtools/tokengenerator/enterprise",
     "AuthorizedScopeEnterpriseUser": "altinn:testtools/tokengenerator/enterpriseuser",
