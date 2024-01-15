@@ -366,7 +366,7 @@ namespace TokenGenerator.Services
 
         private static string GetIssuer(string env)
         {
-            string tld = env.ToLowerInvariant().StartsWith("at") ? "cloud" : "no";
+            string tld = (env.ToLowerInvariant().StartsWith("at") || env.ToLowerInvariant().StartsWith("yt01")) ? "cloud" : "no";
             return $"https://platform.{env}.altinn.{tld}/authentication/api/v1/openid/";
         }
 
