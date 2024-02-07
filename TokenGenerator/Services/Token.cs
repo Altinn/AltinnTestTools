@@ -49,7 +49,6 @@ namespace TokenGenerator.Services
                 { "client_id", Guid.NewGuid().ToString() },
                 { "jti", RandomString(43) },
                 { "consumer", GetOrgNoObject(orgNo) },
-                { "urn:altinn:org", org },
                 { "urn:altinn:orgNumber", orgNo },
                 { "urn:altinn:authenticatemethod", "maskinporten" },
                 { "urn:altinn:authlevel", 3 },
@@ -57,6 +56,11 @@ namespace TokenGenerator.Services
                 { "actual_iss", "altinn-test-tools" },
                 { "nbf", dateTimeOffset.ToUnixTimeSeconds() },
             };
+
+            if (!string.IsNullOrEmpty(org))
+            {
+                payload.Add("urn:altinn:org", org);
+            }
 
             if (!string.IsNullOrEmpty(supplierOrgNo))
             {
