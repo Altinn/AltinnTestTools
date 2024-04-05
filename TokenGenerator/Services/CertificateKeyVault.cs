@@ -135,7 +135,7 @@ namespace TokenGenerator.Services
                 try
                 {
                     await File.WriteAllBytesAsync(file, Convert.FromBase64String(secret.Value));
-                    certificates.Add(new X509Certificate2(file, (string)null, X509KeyStorageFlags.EphemeralKeySet));
+                    certificates.Add(new X509Certificate2(file, (string)null, X509KeyStorageFlags.MachineKeySet));
                 }
                 finally
                 {
