@@ -97,9 +97,9 @@ namespace TokenGenerator.Services
                 { "client_id", Guid.NewGuid().ToString() },
                 { "consumer", GetOrgNoObject(orgNo) },
                 { "jti", RandomString(43) },
-                { "urn:altinn:userid", userId },
+                { "urn:altinn:userid", (int)userId },
                 { "urn:altinn:username", userName },
-                { "urn:altinn:partyid", partyId },
+                { "urn:altinn:partyid", (int)partyId },
                 { "urn:altinn:orgNumber", orgNo },
                 { "urn:altinn:authenticatemethod", "virksomhetsbruker" },
                 { "urn:altinn:authlevel", 3 },
@@ -164,12 +164,12 @@ namespace TokenGenerator.Services
             }
             
             if (userId != 0) {
-                payload.Add("nameid", userId);
-                payload.Add("urn:altinn:userid", userId);
+                payload.Add("nameid", (int)userId);
+                payload.Add("urn:altinn:userid", (int)userId);
             }
             
             if (partyId != 0) {
-                payload.Add("urn:altinn:partyid", partyId);
+                payload.Add("urn:altinn:partyid", (int)partyId);
             }
 
             if (userName != "") {
