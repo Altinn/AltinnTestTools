@@ -13,7 +13,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 using Newtonsoft.Json;
-
+using Newtonsoft.Json.Linq;
 using TokenGenerator.Services.Interfaces;
 
 namespace TokenGenerator.Services
@@ -122,6 +122,38 @@ namespace TokenGenerator.Services
             {
                 payload.Add("delegation_source", delegationSource);
             }
+
+            var securityToken = new JwtSecurityToken(header, payload);
+            var handler = new JwtSecurityTokenHandler();
+
+            return handler.WriteToken(securityToken);
+        }
+
+        public async Task<string> GetSystemUserToken(string env, string[] scopes, string systemUserOrg, string systemUserId, uint ttl)
+        {
+            var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
+            var signingCertificate = await certificateHelper.GetApiTokenSigningCertificate(env);
+            var securityKey = new X509SecurityKey(signingCertificate);
+            var header = new JwtHeader(new SigningCredentials(securityKey, SecurityAlgorithms.RsaSha256))
+            {
+               { "x5c", signingCertificate.Thumbprint }
+            };
+
+            var payload = new JwtPayload
+            {
+                { "iss", GetIssuer(env) },
+                { "scope", string.Join(' ', scopes) },
+                { "client_id", Guid.NewGuid().ToString() },
+                { "exp", dateTimeOffset.ToUnixTimeSeconds() + ttl },
+                { "iat", dateTimeOffset.ToUnixTimeSeconds() },
+                { "jti", RandomString(43) },
+                { "authorization_details", GetAuthorizationDetailsForSystemUser(systemUserOrg, systemUserId) },
+                { "urn:altinn:authenticatemethod", "systemuser" },
+                { "urn:altinn:authlevel", 3 },
+                { "token_type", "Bearer" },
+                { "nbf", dateTimeOffset.ToUnixTimeSeconds() },
+                { "actual_iss", "altinn-test-tools" }
+            };
 
             var securityToken = new JwtSecurityToken(header, payload);
             var handler = new JwtSecurityTokenHandler();
@@ -368,6 +400,23 @@ namespace TokenGenerator.Services
             return new Dictionary<string, string>() { { "authority", "iso6523-actorid-upis" }, { "ID", "0192:" + orgNo } };
         }
 
+        private static List<Dictionary<string, object>> GetAuthorizationDetailsForSystemUser(string systemUserOrg, string systemUserId)
+        {
+            var details = new AuthorizationDetails(systemUserOrg, systemUserId);
+            var detailsDict = new Dictionary<string, object>
+            {
+                { "type", details.Type },
+                { "systemuser_id", details.SystemUserId },
+                { "systemuser_org", new Dictionary<string, string> {
+                    { "authority", details.SystemUserOrg.Authority },
+                    { "ID", details.SystemUserOrg.Id }
+                }},
+                { "system_id", details.SystemId }
+            };
+
+            return new List<Dictionary<string, object>> { detailsDict };
+        }
+
         private static string GetIssuer(string env)
         {
             string tld = (env.ToLowerInvariant().StartsWith("at") || env.ToLowerInvariant().StartsWith("yt01")) ? "cloud" : "no";
@@ -399,4 +448,41 @@ namespace TokenGenerator.Services
             return handler.WriteToken(securityToken);
         }
     }
+
+    internal class AuthorizationDetails
+    {
+        [JsonProperty("type")]
+        public string Type { get; set; } = "urn:altinn:systemuser";
+
+        [JsonProperty("systemuser_id")]
+        public List<string> SystemUserId { get; set; }
+
+        [JsonProperty("systemuser_org")]
+        public Iso6523Org SystemUserOrg { get; set; }
+
+        [JsonProperty("system_id")]
+        public string SystemId { get; set; }
+
+        public AuthorizationDetails(string systemUserOrg, string systemUserId)
+        {
+            SystemUserOrg = new Iso6523Org(systemUserOrg);
+            SystemUserId = new List<string> { systemUserId };
+            SystemId = Guid.NewGuid().ToString();
+        }
+    }
+
+    internal class Iso6523Org
+    {
+        [JsonProperty("authority")]
+        public string Authority { get; set; } = "iso6523-actorid-upis";
+
+        [JsonProperty("ID")]
+        public string Id { get; set; }
+
+        public Iso6523Org(string id)
+        {
+            Id = "0192:" + id;
+        }
+    }
+
 }

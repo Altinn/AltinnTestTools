@@ -8,6 +8,7 @@ namespace TokenGenerator.Services.Interfaces
     {
         Task<string> GetEnterpriseToken(string env, string[] scopes, string org, string orgNo, string supplierOrgNo, uint ttl, string delegationSource);
         Task<string> GetEnterpriseUserToken(string env, string[] scopes, string org, string orgNo, string supplierOrgNo, uint partyId, uint userId, string userName, uint ttl, string delegationSource);
+        Task<string> GetSystemUserToken(string env, string[] scopes, string systemUserOrg, string systemUserId, uint ttl);
         Task<string> GetPersonalToken(string env, string[] scopes, uint userId, uint partyId, string pid, string authLvl, string consumerOrgNo, string userName, string clientAmr, uint ttl, string delegationSource);
         Task<string> GetConsentToken(string env, string[] serviceCodes, IQueryCollection queryParameters, Guid authorizationCode, string offeredBy, string coveredBy, string handledBy, uint ttl);
         Task<string> GetPlatformToken(string env, string appClaim, uint ttl);
