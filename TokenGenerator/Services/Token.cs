@@ -13,7 +13,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 using Newtonsoft.Json;
-
+using Newtonsoft.Json.Linq;
 using TokenGenerator.Services.Interfaces;
 
 namespace TokenGenerator.Services
@@ -121,6 +121,44 @@ namespace TokenGenerator.Services
             if (!string.IsNullOrEmpty(delegationSource))
             {
                 payload.Add("delegation_source", delegationSource);
+            }
+
+            var securityToken = new JwtSecurityToken(header, payload);
+            var handler = new JwtSecurityTokenHandler();
+
+            return handler.WriteToken(securityToken);
+        }
+
+        public async Task<string> GetSystemUserToken(string env, string[] scopes, string orgNo, string supplierOrgNo, string systemUserOrg, string systemUserId, uint ttl)
+        {
+            var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
+            var signingCertificate = await certificateHelper.GetApiTokenSigningCertificate(env);
+            var securityKey = new X509SecurityKey(signingCertificate);
+            var header = new JwtHeader(new SigningCredentials(securityKey, SecurityAlgorithms.RsaSha256))
+            {
+               { "x5c", signingCertificate.Thumbprint }
+            };
+
+            var payload = new JwtPayload
+            {
+                { "iss", GetIssuer(env) },
+                { "scope", string.Join(' ', scopes) },
+                { "client_id", Guid.NewGuid().ToString() },
+                { "consumer", GetOrgNoObject(orgNo) },
+                { "exp", dateTimeOffset.ToUnixTimeSeconds() + ttl },
+                { "iat", dateTimeOffset.ToUnixTimeSeconds() },
+                { "jti", RandomString(43) },
+                { "authorization_details", GetAuthorizationDetailsForSystemUser(systemUserOrg, systemUserId) },
+                { "urn:altinn:authenticatemethod", "systemuser" },
+                { "urn:altinn:authlevel", 3 },
+                { "token_type", "Bearer" },
+                { "nbf", dateTimeOffset.ToUnixTimeSeconds() },
+                { "actual_iss", "altinn-test-tools" }
+            };
+
+            if (!string.IsNullOrEmpty(supplierOrgNo))
+            {
+                payload.Add("supplier", GetOrgNoObject(supplierOrgNo));
             }
 
             var securityToken = new JwtSecurityToken(header, payload);
@@ -366,6 +404,19 @@ namespace TokenGenerator.Services
         private static Dictionary<string, string> GetOrgNoObject(string orgNo)
         {
             return new Dictionary<string, string>() { { "authority", "iso6523-actorid-upis" }, { "ID", "0192:" + orgNo } };
+        }
+
+        private static List<Dictionary<string, object>> GetAuthorizationDetailsForSystemUser(string systemUserOrg, string systemUserId)
+        {
+            var detailsDict = new Dictionary<string, object>
+            {
+                { "type", "urn:altinn:systemuser" },
+                { "systemuser_id", systemUserId },
+                { "systemuser_org", GetOrgNoObject(systemUserOrg)},
+                { "system_id", Guid.NewGuid().ToString() }
+            };
+
+            return new List<Dictionary<string, object>> { detailsDict };
         }
 
         private static string GetIssuer(string env)

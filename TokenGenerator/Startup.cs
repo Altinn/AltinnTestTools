@@ -25,6 +25,7 @@ namespace TokenGenerator
             builder.Services.Configure<Settings>(config.GetSection("Settings"));
             builder.Services.AddOptions();
 
+            //builder.Services.AddSingleton<ICertificateService, SelfSignedCertificate>();
             //builder.Services.AddSingleton<ICertificateService, CertificatePfx>();
             builder.Services.AddSingleton<ICertificateService, CertificateKeyVault>();
             builder.Services.AddSingleton<IToken, Token>();
