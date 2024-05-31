@@ -411,7 +411,7 @@ namespace TokenGenerator.Services
             var detailsDict = new Dictionary<string, object>
             {
                 { "type", "urn:altinn:systemuser" },
-                { "systemuser_id", systemUserId },
+                { "systemuser_id", new[] { systemUserId } },
                 { "systemuser_org", GetOrgNoObject(systemUserOrg)},
                 { "system_id", Guid.NewGuid().ToString() }
             };
