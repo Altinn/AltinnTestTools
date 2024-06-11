@@ -17,7 +17,6 @@
     "ConsentTokenSigningCertNames": "dev:altinn-testtools-consent-token-signing-cert",
     "EnvironmentsApiToken": "dev:altinn-testtools-kv",
     "EnvironmentsConsentToken": "dev:altinn-testtools-kv",
-    "TokenAuthorizationWellKnownEndpoint": "https://test.maskinporten.no/.well-known/oauth-authorization-server",
-    "TokenAuxiliaryAuthorizationWellKnownEndpoint": "https://ver2.maskinporten.no/.well-known/oauth-authorization-server"
+    "TokenAuthorizationWellKnownEndpoint": "https://test.maskinporten.no/.well-known/oauth-authorization-server"
   }
 }
