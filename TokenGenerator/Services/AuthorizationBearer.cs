@@ -22,9 +22,7 @@ namespace TokenGenerator.Services
     {
         private readonly Settings settings;
         private readonly object cmLockMaskinporten = new object();
-        private readonly object cmLockMaskinportenAux = new object();
         private ConfigurationManager<OpenIdConnectConfiguration> configurationManager;
-        private ConfigurationManager<OpenIdConnectConfiguration> configurationManagerAux;
         private readonly HttpContext httpContext;
 
         private ConfigurationManager<OpenIdConnectConfiguration> ConfigurationManager
@@ -41,23 +39,6 @@ namespace TokenGenerator.Services
                 }
 
                 return configurationManager;
-            }
-        }
-
-        private ConfigurationManager<OpenIdConnectConfiguration> ConfigurationManagerAux
-        {
-            get
-            {
-                if (configurationManagerAux != null) return configurationManagerAux;
-                lock (cmLockMaskinportenAux)
-                {
-                    configurationManagerAux ??= new ConfigurationManager<OpenIdConnectConfiguration>(
-                        settings.TokenAuxiliaryAuthorizationWellKnownEndpoint,
-                        new OpenIdConnectConfigurationRetriever(),
-                        new HttpClient {Timeout = TimeSpan.FromMilliseconds(10000)});
-                }
-
-                return configurationManagerAux;
             }
         }
 
@@ -83,11 +64,6 @@ namespace TokenGenerator.Services
                 OpenIdConnectConfiguration configuration = await ConfigurationManager.GetConfigurationAsync();
                 var signingKeys = new List<SecurityKey>();
                 signingKeys.AddRange(configuration.SigningKeys);
-                if (settings.TokenAuxiliaryAuthorizationWellKnownEndpoint != null)
-                {
-                    OpenIdConnectConfiguration configurationAux = await ConfigurationManagerAux.GetConfigurationAsync();
-                    signingKeys.AddRange(configurationAux.SigningKeys);
-                }
 
                 TokenValidationParameters parameters = new TokenValidationParameters()
                 {
