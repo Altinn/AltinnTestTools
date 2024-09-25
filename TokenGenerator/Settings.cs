@@ -8,8 +8,12 @@ namespace TokenGenerator
     {
         public string ApiTokenSigningCertNames { get; set; }
         public Dictionary<string, string> ApiTokenSigningCertNamesDict => GetKeyValuePairs(ApiTokenSigningCertNames);
+        public string PlatformAccessTokenIssuerName { get; set; }
         public string PlatformAccessTokenSigningCertNames { get; set; }
         public Dictionary<string, string> PlatformAccessTokenSigningCertNamesDict => GetKeyValuePairs(PlatformAccessTokenSigningCertNames);
+        public string TtdAccessTokenIssuerName { get; set; }
+        public string TtdAccessTokenSigningCertNames { get; set; }
+        public Dictionary<string, string> TtdAccessTokenSigningCertNamesDict => GetKeyValuePairs(TtdAccessTokenSigningCertNames);
         public string ConsentTokenSigningCertNames { get; set; }
         public Dictionary<string, string> ConsentTokenSigningCertNamesDict => GetKeyValuePairs(ConsentTokenSigningCertNames);
         public string BasicAuthorizationUsers { get; set; }

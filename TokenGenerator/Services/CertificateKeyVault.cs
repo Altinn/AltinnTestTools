@@ -56,14 +56,31 @@ namespace TokenGenerator.Services
             return GetLatestCertificateWithRolloverDelay(certificates, 1);
         }
 
-        public async Task<X509Certificate2> GetPlatformAccessTokenSigningCertificate(string environment)
+        public async Task<X509Certificate2> GetPlatformAccessTokenSigningCertificate(string environment, string issuer)
         {
-            if (string.IsNullOrEmpty(environment) || settings.EnvironmentsApiTokenDict[environment] == null || settings.PlatformAccessTokenSigningCertNamesDict[environment] == null)
+            List<X509Certificate2> certificates = null;
+            if (issuer == settings.PlatformAccessTokenIssuerName)
             {
-                throw new ArgumentException("Invalid environment");
-            }
+                if (string.IsNullOrEmpty(environment) || settings.EnvironmentsApiTokenDict[environment] == null || settings.PlatformAccessTokenSigningCertNamesDict[environment] == null)
+                {
+                    throw new ArgumentException("Invalid environment");
+                }
 
-            var certificates = await GetCertificates(settings.EnvironmentsApiTokenDict[environment], settings.PlatformAccessTokenSigningCertNamesDict[environment]);
+                certificates = await GetCertificates(settings.EnvironmentsApiTokenDict[environment], settings.PlatformAccessTokenSigningCertNamesDict[environment]);
+            }
+            else if (issuer == settings.TtdAccessTokenIssuerName)
+            {
+                if (string.IsNullOrEmpty(issuer) || settings.EnvironmentsApiTokenDict[environment] == null || settings.TtdAccessTokenSigningCertNamesDict[environment] == null)
+                {
+                    throw new ArgumentException("Invalid environment or org issuer");
+                }
+
+                certificates = await GetCertificates(settings.EnvironmentsApiTokenDict[environment], settings.TtdAccessTokenSigningCertNamesDict[environment]);
+            }
+            else
+            {
+                throw new ArgumentException("Invalid issuer");
+            }
 
             return GetLatestCertificateWithRolloverDelay(certificates, 1);
         }

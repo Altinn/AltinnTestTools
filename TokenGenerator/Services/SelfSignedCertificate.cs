@@ -25,7 +25,7 @@ public class SelfSignedCertificate : ICertificateService
         return Task.FromResult(lazyCertificate.Value);
     }
 
-    public Task<X509Certificate2> GetPlatformAccessTokenSigningCertificate(string environment)
+    public Task<X509Certificate2> GetPlatformAccessTokenSigningCertificate(string environment, string issuer)
     {
         return Task.FromResult(lazyCertificate.Value);
     }

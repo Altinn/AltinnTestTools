@@ -57,5 +57,10 @@ namespace TokenGenerator.Services
         {
             throw new NotImplementedException();
         }
+
+        public Task<X509Certificate2> GetPlatformAccessTokenSigningCertificate(string environment, string issuer)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
