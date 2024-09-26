@@ -34,6 +34,7 @@ namespace TokenGenerator
 
             requestValidator.ValidateQueryParam("env", true, tokenHelper.IsValidEnvironment, out string env);
             requestValidator.ValidateQueryParam("app", true, tokenHelper.IsValidDottedIdentifier, out string appClaim);
+            requestValidator.ValidateQueryParam("org", false, tokenHelper.IsValidIdentifier, out string issuerOrg);
             requestValidator.ValidateQueryParam<uint>("ttl", false, uint.TryParse, out uint ttl, 1800);
 
             if (requestValidator.GetErrors().Count > 0)
@@ -41,7 +42,7 @@ namespace TokenGenerator
                  return new BadRequestObjectResult(requestValidator.GetErrors());
             }
 
-            string token = await tokenHelper.GetPlatformAccessToken(env, appClaim, ttl);
+            string token = await tokenHelper.GetPlatformAccessToken(env, appClaim, ttl, issuerOrg ?? settings.PlatformAccessTokenIssuerName);
 
             if (!string.IsNullOrEmpty(req.Query["dump"]))
             {

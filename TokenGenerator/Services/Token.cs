@@ -301,10 +301,23 @@ namespace TokenGenerator.Services
         /// <param name="env">The environment id.</param>
         /// <param name="appClaim">The name of the platform application.</param>
         /// <param name="ttl">Time to live.</param>
-        public async Task<string> GetPlatformAccessToken(string env, string appClaim, uint ttl)
+        /// <param name="issuer">The issuer of the token. Default is <c>platform</c>.</param>
+        public async Task<string> GetPlatformAccessToken(string env, string appClaim, uint ttl, string issuer)
         {
-            var signingCertificate = await certificateHelper.GetPlatformAccessTokenSigningCertificate(env);
-            return CreateAccessToken(appClaim, ttl, "platform", signingCertificate);
+            if (issuer == settings.PlatformAccessTokenIssuerName)
+            {
+                var signingCertificate = await certificateHelper.GetPlatformAccessTokenSigningCertificate(env, settings.PlatformAccessTokenIssuerName);
+                return CreateAccessToken(appClaim, ttl, settings.PlatformAccessTokenIssuerName, signingCertificate);
+            }
+            else if (issuer == settings.TtdAccessTokenIssuerName)
+            {
+                var signingCertificate = await certificateHelper.GetPlatformAccessTokenSigningCertificate(env, settings.TtdAccessTokenIssuerName);
+                return CreateAccessToken(appClaim, ttl, settings.TtdAccessTokenIssuerName, signingCertificate);
+            }
+            else
+            {
+                throw new ArgumentException("Invalid issuer");
+            }
         }
 
         public bool TryParseScopes(string input, out string[] scopes)

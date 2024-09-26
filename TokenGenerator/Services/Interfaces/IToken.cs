@@ -12,7 +12,7 @@ namespace TokenGenerator.Services.Interfaces
         Task<string> GetPersonalToken(string env, string[] scopes, uint userId, uint partyId, string pid, string authLvl, string consumerOrgNo, string userName, string clientAmr, uint ttl, string delegationSource);
         Task<string> GetConsentToken(string env, string[] serviceCodes, IQueryCollection queryParameters, Guid authorizationCode, string offeredBy, string coveredBy, string handledBy, uint ttl);
         Task<string> GetPlatformToken(string env, string appClaim, uint ttl);
-        Task<string> GetPlatformAccessToken(string env, string appClaim, uint ttl);
+        Task<string> GetPlatformAccessToken(string env, string appClaim, uint ttl, string iss = "platform");
 
         string Dump(string token);
         bool IsValidAuthLvl(string authLvl);
