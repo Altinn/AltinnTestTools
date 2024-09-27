@@ -33,7 +33,7 @@ namespace TokenGenerator
             }
 
             requestValidator.ValidateQueryParam("env", true, tokenHelper.IsValidEnvironment, out string env);
-            requestValidator.ValidateQueryParam("app", true, tokenHelper.IsValidDottedIdentifier, out string appClaim);
+            requestValidator.ValidateQueryParam("app", true, tokenHelper.IsValidIdentifier, out string appClaim);
             requestValidator.ValidateQueryParam("org", false, tokenHelper.IsValidIdentifier, out string issuerOrg);
             requestValidator.ValidateQueryParam<uint>("ttl", false, uint.TryParse, out uint ttl, 1800);
 
