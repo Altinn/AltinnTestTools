@@ -70,12 +70,12 @@ namespace TokenGenerator.Services
             }
             else if (issuer == settings.TtdAccessTokenIssuerName)
             {
-                if (string.IsNullOrEmpty(issuer) || settings.EnvironmentsApiTokenDict[environment] == null || settings.TtdAccessTokenSigningCertNamesDict[environment] == null)
+                if (string.IsNullOrEmpty(issuer) || settings.EnvironmentsTtdAccessTokenDict[environment] == null || settings.TtdAccessTokenSigningCertNamesDict[environment] == null)
                 {
                     throw new ArgumentException("Invalid environment or org issuer");
                 }
 
-                certificates = await GetCertificates(settings.EnvironmentsApiTokenDict[environment], settings.TtdAccessTokenSigningCertNamesDict[environment]);
+                certificates = await GetCertificates(settings.EnvironmentsTtdAccessTokenDict[environment], settings.TtdAccessTokenSigningCertNamesDict[environment]);
             }
             else
             {
