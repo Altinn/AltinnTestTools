@@ -27,8 +27,10 @@ namespace TokenGenerator
         public string TokenAuthorizationWellKnownEndpoint { get; set; }
         public string EnvironmentsApiToken { get; set; }
         public string EnvironmentsConsentToken { get; set; }
+        public string EnvironmentsTtdAccessToken { get; set; }
         public Dictionary<string, string> EnvironmentsApiTokenDict => GetKeyValuePairs(EnvironmentsApiToken);
         public Dictionary<string, string> EnvironmentsConsentTokenDict => GetKeyValuePairs(EnvironmentsConsentToken);
+        public Dictionary<string, string> EnvironmentsTtdAccessTokenDict => GetKeyValuePairs(EnvironmentsTtdAccessToken);
 
         private Dictionary<string, string> GetKeyValuePairs(string stringfieldToSpilt, char fieldSeparator = ';', char keyValueSeparator = ':')
         {
