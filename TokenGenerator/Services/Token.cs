@@ -334,7 +334,7 @@ namespace TokenGenerator.Services
 
         public bool IsValidIdentifier(string identifier)
         {
-            return !string.IsNullOrEmpty(identifier) && identifier.Length <= 50 && Regex.IsMatch(identifier, "^[a-z0-9_]+$");
+            return !string.IsNullOrEmpty(identifier) && identifier.Length <= 50 && Regex.IsMatch(identifier, "^[a-z0-9_-]+$");
         }
 
         public bool IsValidDottedIdentifier(string identifier)
