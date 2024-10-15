@@ -185,7 +185,7 @@ namespace TokenGenerator.Services
                 { "pid", pid },
                 { "token_type", "Bearer" },
                 { "client_id", Guid.NewGuid().ToString() },
-                { "acr", "Level" + authLvl },
+                { "acr", GetAcrLevel(authLvl) },
                 { "scope", string.Join(' ', scopes) },
                 { "exp", dateTimeOffset.ToUnixTimeSeconds() + ttl },
                 { "iat", dateTimeOffset.ToUnixTimeSeconds() },
@@ -219,6 +219,18 @@ namespace TokenGenerator.Services
 
             return handler.WriteToken(securityToken);
 
+        }
+
+        private string GetAcrLevel(string authLvl)
+        {
+            return authLvl switch
+            {
+                "3" => "idporten-loa-substantial",
+                "4" => "idporten-loa-high",
+                // NOTE! This is not currently a value that ID-porten produces
+                // https://docs.digdir.no/docs/idporten/oidc/oidc_protocol_new_idporten#new-acr-values
+                _ => "idporten-loa-low"
+            };
         }
 
         public async Task<string> GetConsentToken(string env, string[] serviceCodes, IQueryCollection queryParameters,
