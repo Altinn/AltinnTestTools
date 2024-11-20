@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "TokenGeneratorCli": {
-      "commandName": "Project",
-      "commandLineArgs": " --org-no 12345 --org foo --scopes adfsd,sdf"
-    }
-  }
-}

@@ -129,7 +129,7 @@ namespace TokenGenerator.Services
             return handler.WriteToken(securityToken);
         }
 
-        public async Task<string> GetSystemUserToken(string env, string[] scopes, string orgNo, string supplierOrgNo, string systemUserOrg, string systemUserId, uint ttl)
+        public async Task<string> GetSystemUserToken(string env, string[] scopes, string orgNo, string supplierOrgNo, string systemUserOrg, string systemUserId, string clientId, uint ttl)
         {
             var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
             var signingCertificate = await certificateHelper.GetApiTokenSigningCertificate(env);
@@ -143,7 +143,7 @@ namespace TokenGenerator.Services
             {
                 { "iss", GetIssuer(env) },
                 { "scope", string.Join(' ', scopes) },
-                { "client_id", Guid.NewGuid().ToString() },
+                { "client_id", clientId },
                 { "consumer", GetOrgNoObject(orgNo) },
                 { "exp", dateTimeOffset.ToUnixTimeSeconds() + ttl },
                 { "iat", dateTimeOffset.ToUnixTimeSeconds() },

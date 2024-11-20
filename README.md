@@ -20,7 +20,7 @@ The application requires authentication. See https://altinn.github.io/docs/api/r
 `https://altinn-testtools-token-generator.azurewebsites.net/api/GetPersonalToken?env={environment}&scopes={scopes}&userId={userId}&partyId={partyId}&pid={pid}`
 
 #### Systemuser tokens ([see docs](https://docs.digdir.no/docs/Maskinporten/maskinporten_func_systembruker))
-`https://altinn-testtools-token-generator.azurewebsites.net/api/GetSystemUserToken?env={environment}&scopes={scopes}&systemUserId={systemUserId}&systemUserOrg={systemUserOrg}`
+`https://altinn-testtools-token-generator.azurewebsites.net/api/GetSystemUserToken?env={environment}&scopes={scopes}&systemUserId={systemUserId}&systemUserOrg={systemUserOrg}&clientId={clientId}`
 
 #### Legacy (Altinn 2) Enterprise user tokens (aka Maskinporten + Enterprise user authentication):
 `https://altinn-testtools-token-generator.azurewebsites.net/api/GetEnterpriseUserToken?env={environment}&orgNo={orgNo}&partyId={partyId}&userId={userId}&userName={userName}`
