@@ -149,7 +149,7 @@ namespace TokenGenerator.Services
                 { "iat", dateTimeOffset.ToUnixTimeSeconds() },
                 { "jti", RandomString(43) },
                 { "authorization_details", GetAuthorizationDetailsForSystemUser(systemUserOrg, systemUserId) },
-                { "urn:altinn:authenticatemethod", "systemuser" },
+                { "urn:altinn:authenticatemethod", "maskinporten" },
                 { "urn:altinn:authlevel", 3 },
                 { "token_type", "Bearer" },
                 { "nbf", dateTimeOffset.ToUnixTimeSeconds() },
