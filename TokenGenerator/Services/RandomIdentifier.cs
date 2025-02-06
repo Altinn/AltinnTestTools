@@ -40,10 +40,10 @@ public class RandomIdentifier : IRandomIdentifier
 
         return array;
     }
-    
+
     private void LoadData()
     {
-        string basePath = Environment.GetEnvironmentVariable("DEPLOYMENT_TARGET") ?? "";
+        string basePath = Environment.GetEnvironmentVariable("WEBROOT_PATH") ?? "";
         string endusersPath = Path.Combine(basePath, "Data", "endusers.txt");
         string enterprisesPath = Path.Combine(basePath, "Data", "enterprises.txt");
 
