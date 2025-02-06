@@ -28,7 +28,7 @@ public class Issuer : IIssuer
             }
             catch (Exception ex)
             {
-                logger.LogError($"Error loading key {keyId}: {ex.Message}");
+                logger.LogError($"Error loading key \"{keyId}\": {ex.GetType().Name}: {ex.Message}");
             }
         }
 
@@ -47,30 +47,9 @@ public class Issuer : IIssuer
     private static ECDsa LoadPrivateKeyFromBase64(string base64)
     {
         var keyBytes = Convert.FromBase64String(base64);
-        
-        try
-        {
-            // First attempt: Direct PKCS#8 import (works on macOS/Linux with OpenSSL)
-            var ecDsa = ECDsa.Create();
-            ecDsa.ImportPkcs8PrivateKey(keyBytes, out _);
-        
-            // Check if running on Windows and re-import using CNG if necessary
-            if (OperatingSystem.IsWindows())
-            {
-                // Export parameters and import them into an ECDsaCng instance
-                var parameters = ecDsa.ExportParameters(true);
-                var ecDsaCng = new ECDsaCng();
-                ecDsaCng.ImportParameters(parameters);
-                ecDsa.Dispose();
-                return ecDsaCng;
-            }
-
-            return ecDsa;
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException("Failed to load private key", ex);
-        }
+        var ecDsa = ECDsa.Create();
+        ecDsa.ImportPkcs8PrivateKey(keyBytes, out _);
+        return ecDsa;
     }
 
     private static JsonWebKey CreateJsonWebKey(ECDsa ecDsa, string keyId)
