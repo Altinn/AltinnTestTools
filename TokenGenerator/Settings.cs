@@ -28,15 +28,17 @@ namespace TokenGenerator
         public string EnvironmentsApiToken { get; set; }
         public string EnvironmentsConsentToken { get; set; }
         public string EnvironmentsTtdAccessToken { get; set; }
+        public string IssuerSigningKeys { get; set; }
         public Dictionary<string, string> EnvironmentsApiTokenDict => GetKeyValuePairs(EnvironmentsApiToken);
         public Dictionary<string, string> EnvironmentsConsentTokenDict => GetKeyValuePairs(EnvironmentsConsentToken);
         public Dictionary<string, string> EnvironmentsTtdAccessTokenDict => GetKeyValuePairs(EnvironmentsTtdAccessToken);
+        public Dictionary<string, string> IssuerSigningKeysDict => GetKeyValuePairs(IssuerSigningKeys); 
 
-        private Dictionary<string, string> GetKeyValuePairs(string stringfieldToSpilt, char fieldSeparator = ';', char keyValueSeparator = ':')
+        private Dictionary<string, string> GetKeyValuePairs(string stringfieldToSplit, char fieldSeparator = ';', char keyValueSeparator = ':')
         {
             Dictionary<string, string> keyValuePairs;
             try {
-                keyValuePairs = stringfieldToSpilt.Split(fieldSeparator).Select(x => x.Split(keyValueSeparator)).ToDictionary(y => y[0], y => y[1]);
+                keyValuePairs = stringfieldToSplit.Split(fieldSeparator).Select(x => x.Split(keyValueSeparator)).ToDictionary(y => y[0], y => y[1]);
             }
             catch (Exception) 
             { 

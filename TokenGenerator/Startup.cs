@@ -29,6 +29,8 @@ namespace TokenGenerator
             //builder.Services.AddSingleton<ICertificateService, CertificatePfx>();
             builder.Services.AddSingleton<ICertificateService, CertificateKeyVault>();
             builder.Services.AddSingleton<IToken, Token>();
+            builder.Services.AddSingleton<IIssuer, Issuer>();
+            builder.Services.AddSingleton<IRandomIdentifier, RandomIdentifier>();
             builder.Services.AddScoped<IAuthorizationBearer, AuthorizationBearer>();
             builder.Services.AddScoped<IAuthorizationBasic, AuthorizationBasic>();
             builder.Services.AddScoped<IRequestValidator, RequestValidator>();

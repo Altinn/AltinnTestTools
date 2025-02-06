@@ -1,3 +1,4 @@
+using System.Linq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
@@ -13,13 +14,15 @@ namespace TokenGenerator
         private readonly IToken tokenHelper;
         private readonly IRequestValidator requestValidator;
         private readonly IAuthorization authorization;
+        private readonly IRandomIdentifier randomIdentifier;
         private readonly Settings settings;
 
-        public GetEnterpriseToken(IToken tokenHelper, IRequestValidator requestValidator, IAuthorization authorization, IOptions<Settings> settings)
+        public GetEnterpriseToken(IToken tokenHelper, IRequestValidator requestValidator, IAuthorization authorization, IRandomIdentifier randomIdentifier, IOptions<Settings> settings)
         {
             this.tokenHelper = tokenHelper;
             this.requestValidator = requestValidator;
             this.authorization = authorization;
+            this.randomIdentifier = randomIdentifier;
             this.settings = settings.Value;
         }
 
@@ -35,7 +38,8 @@ namespace TokenGenerator
             requestValidator.ValidateQueryParam("env", true, tokenHelper.IsValidEnvironment, out string env);
             requestValidator.ValidateQueryParam("scopes", true, tokenHelper.TryParseScopes, out string[] scopes);
             requestValidator.ValidateQueryParam("org", false, tokenHelper.IsValidIdentifier, out string org);
-            requestValidator.ValidateQueryParam("orgNo", true, tokenHelper.IsValidOrgNo, out string orgNo);
+            requestValidator.ValidateQueryParam("orgNo", false, tokenHelper.IsValidOrgNo, out string orgNo);
+            requestValidator.ValidateQueryParam("bulkCount", false, uint.TryParse, out uint bulkCount);
             requestValidator.ValidateQueryParam("supplierOrgNo", false, tokenHelper.IsValidOrgNo, out string supplierOrgNo);
             requestValidator.ValidateQueryParam<uint>("ttl", false, uint.TryParse, out uint ttl, 1800);
             requestValidator.ValidateQueryParam("delegationSource", false, tokenHelper.IsValidUri, out string delegationSource);
@@ -45,7 +49,17 @@ namespace TokenGenerator
                  return new BadRequestObjectResult(requestValidator.GetErrors());
             }
             
-            string token = await tokenHelper.GetEnterpriseToken(env, scopes, org, orgNo, supplierOrgNo, ttl, delegationSource);
+            if (bulkCount > 0)
+            {
+                var randomList = randomIdentifier.GetRandomEnterpriseIdentifiers(bulkCount);
+                var tokenList = await tokenHelper.GetTokenList(randomList, async randomOrgNo => 
+                    await tokenHelper.GetEnterpriseToken(req, env, scopes, org, randomOrgNo, supplierOrgNo, ttl, delegationSource));
+                
+                return new OkObjectResult(tokenList);
+            }
+
+            orgNo ??= randomIdentifier.GetRandomEnterpriseIdentifiers(1).First();
+            string token = await tokenHelper.GetEnterpriseToken(req, env, scopes, org, orgNo, supplierOrgNo, ttl, delegationSource);
 
             if (!string.IsNullOrEmpty(req.Query["dump"]))
             {
