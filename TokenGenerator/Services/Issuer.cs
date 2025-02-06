@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using TokenGenerator.Services.Interfaces;
@@ -12,7 +13,7 @@ public class Issuer : IIssuer
 {
     private readonly List<(string KeyId, ECDsaSecurityKey PrivateKey, JsonWebKey PublicKey)> activeKeys;
     
-    public Issuer(IOptions<Settings> settings)
+    public Issuer(IOptions<Settings> settings, ILogger<Issuer> logger)
     {
         var keys = new List<(string, ECDsaSecurityKey, JsonWebKey)>();
         
@@ -27,12 +28,12 @@ public class Issuer : IIssuer
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading key {keyId}: {ex.Message}");
+                logger.LogError($"Error loading key {keyId}: {ex.Message}");
             }
         }
 
         if (!keys.Any())
-            throw new InvalidOperationException("No valid signing keys were loaded.");
+            logger.LogWarning("No valid keys loaded, the issuer will not be able to sign tokens");
 
         activeKeys = keys;
     }
