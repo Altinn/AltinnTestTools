@@ -43,27 +43,35 @@ public class RandomIdentifier : IRandomIdentifier
 
     private void LoadData()
     {
-        string basePath = Environment.GetEnvironmentVariable("WEBROOT_PATH") ?? "";
-        string endusersPath = Path.Combine(basePath, "Data", "endusers.txt");
-        string enterprisesPath = Path.Combine(basePath, "Data", "enterprises.txt");
-
-        if (File.Exists(endusersPath))
+        var basePathMaybe = "C:/home/site/wwwroot/";
+        var endusersFile = "Data/endusers.txt";
+        var enterprisesFile = "Data/enterprises.txt";
+        
+        if (File.Exists(basePathMaybe + endusersFile))
         {
-            randomPersonalIdentifiers = File.ReadAllLines(endusersPath);
+            randomPersonalIdentifiers = File.ReadAllLines(basePathMaybe + endusersFile);
+        }
+        else if (File.Exists(endusersFile))
+        {
+            randomPersonalIdentifiers = File.ReadAllLines(endusersFile);
         }
         else
         {
-            logger.LogWarning($"Could not find file with random personal identifiers at path: {endusersPath}");
+            logger.LogWarning($"Could not find file with random personal identifiers at path: {basePathMaybe + endusersFile}");
             randomPersonalIdentifiers = Array.Empty<string>();
         }
         
-        if (File.Exists(enterprisesPath))
+        if (File.Exists(basePathMaybe + enterprisesFile))
         {
-            randomEnterpriseIdentifiers = File.ReadAllLines(enterprisesPath);
+            randomEnterpriseIdentifiers = File.ReadAllLines(basePathMaybe + enterprisesFile);
+        }
+        else if (File.Exists(enterprisesFile))
+        {
+            randomEnterpriseIdentifiers = File.ReadAllLines(enterprisesFile);
         }
         else
         {
-            logger.LogWarning($"Could not find file with random enterprise identifiers at path: {enterprisesPath}");
+            logger.LogWarning($"Could not find file with random enterpise identifiers at path: {basePathMaybe + enterprisesFile}");
             randomEnterpriseIdentifiers = Array.Empty<string>();
         }
     }
