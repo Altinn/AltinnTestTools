@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
@@ -6,6 +7,7 @@ using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Http;
@@ -13,7 +15,6 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using TokenGenerator.Services.Interfaces;
 
 namespace TokenGenerator.Services
@@ -23,23 +24,21 @@ namespace TokenGenerator.Services
         private readonly Settings settings;
         private const string ValidScopeListRegex = @"^[a-z0-9:/_\-,\. ]+$";
         private readonly ICertificateService certificateHelper;
+        private readonly IIssuer issuer;
+        private readonly ConcurrentDictionary<string, JwtHeader> jwtHeaderCache = new();
+        private readonly Random random = new();
 
-        public Token(IOptions<Settings> settings, ICertificateService certificateHelper)
+        public Token(IOptions<Settings> settings, ICertificateService certificateHelper, IIssuer issuer)
         {
             this.settings = settings.Value;
             this.certificateHelper = certificateHelper;
+            this.issuer = issuer;
         }
 
-        public async Task<string> GetEnterpriseToken(string env, string[] scopes, string org, string orgNo, string supplierOrgNo, uint ttl, string delegationSource)
+        public async Task<string> GetEnterpriseToken(HttpRequest req, string env, string[] scopes, string org, string orgNo, string supplierOrgNo, uint ttl, string delegationSource)
         {
+            var header = await GetJwtHeader(env);
             var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
-            var signingCertificate = await certificateHelper.GetApiTokenSigningCertificate(env);
-            var securityKey = new X509SecurityKey(signingCertificate);
-            var header = new JwtHeader(new SigningCredentials(securityKey, SecurityAlgorithms.RsaSha256))
-            {
-               { "x5c", signingCertificate.Thumbprint }
-            };
-
             var payload = new JwtPayload
             {
                 { "scope", string.Join(' ', scopes) },
@@ -52,7 +51,7 @@ namespace TokenGenerator.Services
                 { "urn:altinn:orgNumber", orgNo },
                 { "urn:altinn:authenticatemethod", "maskinporten" },
                 { "urn:altinn:authlevel", 3 },
-                { "iss", GetIssuer(env) },
+                { "iss", GetIssuer(req, env) },
                 { "actual_iss", "altinn-test-tools" },
                 { "nbf", dateTimeOffset.ToUnixTimeSeconds() },
             };
@@ -80,14 +79,8 @@ namespace TokenGenerator.Services
 
         public async Task<string> GetEnterpriseUserToken(string env, string[] scopes, string org, string orgNo, string supplierOrgNo, uint partyId, uint userId, string userName, uint ttl, string delegationSource)
         {
+            var header = await GetJwtHeader(env);
             var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
-            var signingCertificate = await certificateHelper.GetApiTokenSigningCertificate(env);
-            var securityKey = new X509SecurityKey(signingCertificate);
-            var header = new JwtHeader(new SigningCredentials(securityKey, SecurityAlgorithms.RsaSha256))
-            {
-               { "x5c", signingCertificate.Thumbprint }
-            };
-
             var payload = new JwtPayload
             {
                 { "scope", string.Join(' ', scopes) },
@@ -103,7 +96,7 @@ namespace TokenGenerator.Services
                 { "urn:altinn:orgNumber", orgNo },
                 { "urn:altinn:authenticatemethod", "virksomhetsbruker" },
                 { "urn:altinn:authlevel", 3 },
-                { "iss", GetIssuer(env) },
+                { "iss", GetIssuer(null, env) },
                 { "actual_iss", "altinn-test-tools" },
                 { "nbf", dateTimeOffset.ToUnixTimeSeconds() },
             };
@@ -131,17 +124,11 @@ namespace TokenGenerator.Services
 
         public async Task<string> GetSystemUserToken(string env, string[] scopes, string orgNo, string supplierOrgNo, string systemUserOrg, string systemUserId, string clientId, uint ttl)
         {
+            var header = await GetJwtHeader(env);
             var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
-            var signingCertificate = await certificateHelper.GetApiTokenSigningCertificate(env);
-            var securityKey = new X509SecurityKey(signingCertificate);
-            var header = new JwtHeader(new SigningCredentials(securityKey, SecurityAlgorithms.RsaSha256))
-            {
-               { "x5c", signingCertificate.Thumbprint }
-            };
-
             var payload = new JwtPayload
             {
-                { "iss", GetIssuer(env) },
+                { "iss", GetIssuer(null, env) },
                 { "scope", string.Join(' ', scopes) },
                 { "client_id", clientId },
                 { "consumer", GetOrgNoObject(orgNo) },
@@ -167,16 +154,10 @@ namespace TokenGenerator.Services
             return handler.WriteToken(securityToken);
         }
 
-        public async Task<string> GetPersonalToken(string env, string[] scopes, uint userId, uint partyId, string pid, string authLvl, string consumerOrgNo, string userName, string clientAmr, uint ttl, string delegationSource)
+        public async Task<string> GetPersonalToken(HttpRequest req, string env, string[] scopes, uint userId, uint partyId, string pid, string authLvl, string consumerOrgNo, string userName, string clientAmr, uint ttl, string delegationSource)
         {
+            var header = await GetJwtHeader(env);
             var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
-            var signingCertificate = await certificateHelper.GetApiTokenSigningCertificate(env);
-            var securityKey = new X509SecurityKey(signingCertificate);
-            var header = new JwtHeader(new SigningCredentials(securityKey, SecurityAlgorithms.RsaSha256))
-            {
-               { "x5c", signingCertificate.Thumbprint }
-            };
-
             var payload = new JwtPayload
             {
                 { "urn:altinn:authenticatemethod", "NotDefined" },
@@ -191,7 +172,7 @@ namespace TokenGenerator.Services
                 { "iat", dateTimeOffset.ToUnixTimeSeconds() },
                 { "client_orgno", consumerOrgNo },
                 { "consumer", GetOrgNoObject(consumerOrgNo) },
-                { "iss", GetIssuer(env) },
+                { "iss", GetIssuer(req, env) },
                 { "actual_iss", "altinn-test-tools" },
                 { "nbf", dateTimeOffset.ToUnixTimeSeconds() },
             };
@@ -220,19 +201,7 @@ namespace TokenGenerator.Services
             return handler.WriteToken(securityToken);
 
         }
-
-        private string GetAcrLevel(string authLvl)
-        {
-            return authLvl switch
-            {
-                "3" => "idporten-loa-substantial",
-                "4" => "idporten-loa-high",
-                // NOTE! This is not currently a value that ID-porten produces
-                // https://docs.digdir.no/docs/idporten/oidc/oidc_protocol_new_idporten#new-acr-values
-                _ => "idporten-loa-low"
-            };
-        }
-
+        
         public async Task<string> GetConsentToken(string env, string[] serviceCodes, IQueryCollection queryParameters,
             Guid authorizationCode, string offeredBy, string coveredBy, string handledBy, uint ttl)
         {
@@ -300,9 +269,9 @@ namespace TokenGenerator.Services
         /// <param name="ttl">Time to live.</param>
         public async Task<string> GetPlatformToken(string env, string appClaim, uint ttl)
         {
-            string issuer = GetIssuer(env);
+            string iss = GetIssuer(null, env);
             var signingCertificate = await certificateHelper.GetApiTokenSigningCertificate(env);
-            return CreateAccessToken(appClaim, ttl, issuer, signingCertificate);
+            return CreateAccessToken(appClaim, ttl, iss, signingCertificate);
         }
 
         /// <summary>
@@ -313,23 +282,48 @@ namespace TokenGenerator.Services
         /// <param name="env">The environment id.</param>
         /// <param name="appClaim">The name of the platform application.</param>
         /// <param name="ttl">Time to live.</param>
-        /// <param name="issuer">The issuer of the token. Default is <c>platform</c>.</param>
-        public async Task<string> GetPlatformAccessToken(string env, string appClaim, uint ttl, string issuer)
+        /// <param name="iss">The issuer of the token. Default is <c>platform</c>.</param>
+        public async Task<string> GetPlatformAccessToken(string env, string appClaim, uint ttl, string iss)
         {
-            if (issuer == settings.PlatformAccessTokenIssuerName)
+            if (iss == settings.PlatformAccessTokenIssuerName)
             {
                 var signingCertificate = await certificateHelper.GetPlatformAccessTokenSigningCertificate(env, settings.PlatformAccessTokenIssuerName);
                 return CreateAccessToken(appClaim, ttl, settings.PlatformAccessTokenIssuerName, signingCertificate);
             }
-            else if (issuer == settings.TtdAccessTokenIssuerName)
+            
+            if (iss == settings.TtdAccessTokenIssuerName)
             {
                 var signingCertificate = await certificateHelper.GetPlatformAccessTokenSigningCertificate(env, settings.TtdAccessTokenIssuerName);
                 return CreateAccessToken(appClaim, ttl, settings.TtdAccessTokenIssuerName, signingCertificate);
             }
-            else
+            
+            throw new ArgumentException("Invalid issuer");
+        }
+
+        public async Task<Dictionary<string, string>> GetTokenList(List<string> claimValues, Func<string, Task<string>> getToken)
+        {
+            var tasks = new List<Task<KeyValuePair<string, string>>>();
+            var semaphore = new SemaphoreSlim(Environment.ProcessorCount * 2);
+            foreach (var randomId in claimValues)
             {
-                throw new ArgumentException("Invalid issuer");
+                var id = randomId;
+                tasks.Add(Task.Run(async () =>
+                {
+                    await semaphore.WaitAsync();
+                    try
+                    {
+                        var token = await getToken(id);
+                        return new KeyValuePair<string, string>(id, token);
+                    }
+                    finally
+                    {
+                        semaphore.Release();
+                    }
+                }));
             }
+
+            var results = await Task.WhenAll(tasks);
+            return results.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
         }
 
         public bool TryParseScopes(string input, out string[] scopes)
@@ -417,8 +411,39 @@ namespace TokenGenerator.Services
                 JsonConvert.SerializeObject(JsonConvert.DeserializeObject(jsonparts[1]), Formatting.Indented);
         }
 
-        private readonly Random random = new Random();
+        private async Task<JwtHeader> GetJwtHeader(string env)
+        {
+            if (jwtHeaderCache.TryGetValue(env, out var cachedHeader)) return cachedHeader;
 
+            if (env == "none")
+            {
+                jwtHeaderCache[env] = new JwtHeader(new SigningCredentials(issuer.GetSigningKey(), SecurityAlgorithms.EcdsaSha256));
+            }
+            else
+            {
+                var signingCertificate = await certificateHelper.GetApiTokenSigningCertificate(env);
+                var securityKey = new X509SecurityKey(signingCertificate);
+                jwtHeaderCache[env] = new JwtHeader(new SigningCredentials(securityKey, SecurityAlgorithms.RsaSha256))
+                {
+                    { "x5c", signingCertificate.Thumbprint }
+                };
+            }
+
+            return jwtHeaderCache[env];
+        }
+
+        private string GetAcrLevel(string authLvl)
+        {
+            return authLvl switch
+            {
+                "3" => "idporten-loa-substantial",
+                "4" => "idporten-loa-high",
+                // NOTE! This is not currently a value that ID-porten produces
+                // https://docs.digdir.no/docs/idporten/oidc/oidc_protocol_new_idporten#new-acr-values
+                _ => "idporten-loa-low"
+            };
+        }        
+        
         private string RandomString(int length)
         {
             const string chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-";
@@ -428,7 +453,7 @@ namespace TokenGenerator.Services
 
         private static Dictionary<string, string> GetOrgNoObject(string orgNo)
         {
-            return new Dictionary<string, string>() { { "authority", "iso6523-actorid-upis" }, { "ID", "0192:" + orgNo } };
+            return new Dictionary<string, string> { { "authority", "iso6523-actorid-upis" }, { "ID", "0192:" + orgNo } };
         }
 
         private static List<Dictionary<string, object>> GetAuthorizationDetailsForSystemUser(string systemUserOrg, string systemUserId)
@@ -444,8 +469,15 @@ namespace TokenGenerator.Services
             return new List<Dictionary<string, object>> { detailsDict };
         }
 
-        private static string GetIssuer(string env)
+        private static string GetIssuer(HttpRequest req, string env)
         {
+            if (env == "none")
+            {
+                if (req == null)
+                    return "https://tokengenerator";
+                return req.Scheme + "://" + req.Host + "/api/.well-known/oauth-authorization-server";
+            }
+            
             string tld = (env.ToLowerInvariant().StartsWith("at") || env.ToLowerInvariant().StartsWith("yt01")) ? "cloud" : "no";
             return $"https://platform.{env}.altinn.{tld}/authentication/api/v1/openid/";
         }
