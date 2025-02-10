@@ -68,6 +68,6 @@ services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 For personal and enterprise tokens, the token generator can also return a list of multiple tokens in a single request, containing random pids or organization numbers, selected from a curated list of Tenor test data. This is useful for performance testing or when a large number of tokens are needed.
 
-All parameters are the same as for single tokens, but the `userId` or `orgNo` parameter is replaced with `bulkCount` to specify the number of tokens to generate. This will return a JSON dictionary with the tokens as values and the corresponding pids or org numbers as keys. 
+All parameters are the same as for single tokens, but the `pid` or `orgNo` parameter is replaced with `bulkCount` to specify the number of tokens to generate. This will return a JSON dictionary with the tokens as values and the corresponding pids or org numbers as keys. 
 
 It is _highly recommended_ to use the `none` environment when using bulk mode, which will cause the token generator to use its own key material for signing. Using other environments such as `at24` or `tt02` is accepted, but will be _excruciatingly_ slow as generating lots of RSA256 tokens is computationally expensive (1000 tokens takes easily 1 minute). The token generator issued tokens uses EcDSA256, which is several orders of magnitude faster than RSA256 (generating thousands of tokens in milliseconds).
