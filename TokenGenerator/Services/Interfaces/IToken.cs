@@ -26,6 +26,6 @@ namespace TokenGenerator.Services.Interfaces
         bool IsValidEnvironment(string env);
         bool IsValidUri(string uriString);
         bool IsValidServiceCodeList(string serviceCodes, out string[] serviceCodeList);
-        bool TryParseScopes(string input, out string[] scopes);        
+        bool TryParseScopes(string input, out string[] scopes);
     }
 }
