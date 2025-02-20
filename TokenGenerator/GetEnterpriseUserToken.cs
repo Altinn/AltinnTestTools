@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Options;
+using System;
 using System.Threading.Tasks;
 using TokenGenerator.Services.Interfaces;
 
@@ -39,6 +40,7 @@ namespace TokenGenerator
             requestValidator.ValidateQueryParam("supplierOrgNo", false, tokenHelper.IsValidOrgNo, out string supplierOrgNo);
             requestValidator.ValidateQueryParam("partyId", true, uint.TryParse, out uint partyId);
             requestValidator.ValidateQueryParam("userId", true, uint.TryParse, out uint userId);
+            requestValidator.ValidateQueryParam("partyuuid", false, Guid.TryParse, out Guid partyUuid);
             requestValidator.ValidateQueryParam("userName", true, tokenHelper.IsValidIdentifier, out string userName);
             requestValidator.ValidateQueryParam<uint>("ttl", false, uint.TryParse, out uint ttl, 1800);
             requestValidator.ValidateQueryParam("delegationSource", false, tokenHelper.IsValidUri, out string delegationSource);
@@ -48,7 +50,7 @@ namespace TokenGenerator
                  return new BadRequestObjectResult(requestValidator.GetErrors());
             }
 
-            string token = await tokenHelper.GetEnterpriseUserToken(env, scopes, org, orgNo, supplierOrgNo, partyId, userId, userName, ttl, delegationSource);
+            string token = await tokenHelper.GetEnterpriseUserToken(env, scopes, org, orgNo, supplierOrgNo, partyId, userId, userName, ttl, delegationSource, partyUuid);
 
             if (!string.IsNullOrEmpty(req.Query["dump"]))
             {

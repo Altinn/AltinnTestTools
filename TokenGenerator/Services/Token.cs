@@ -77,7 +77,7 @@ namespace TokenGenerator.Services
             return handler.WriteToken(securityToken);
         }
 
-        public async Task<string> GetEnterpriseUserToken(string env, string[] scopes, string org, string orgNo, string supplierOrgNo, uint partyId, uint userId, string userName, uint ttl, string delegationSource)
+        public async Task<string> GetEnterpriseUserToken(string env, string[] scopes, string org, string orgNo, string supplierOrgNo, uint partyId, uint userId, string userName, uint ttl, string delegationSource, Guid partyUuid)
         {
             var header = await GetJwtHeader(env);
             var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
@@ -104,6 +104,11 @@ namespace TokenGenerator.Services
             if (!string.IsNullOrEmpty(org))
             {
                 payload.Add("urn:altinn:org", org);
+            }
+
+            if (partyUuid != Guid.Empty)
+            {
+                payload.Add("urn:altinn:party:uuid", partyUuid.ToString());
             }
 
             if (!string.IsNullOrEmpty(supplierOrgNo))
@@ -154,7 +159,7 @@ namespace TokenGenerator.Services
             return handler.WriteToken(securityToken);
         }
 
-        public async Task<string> GetPersonalToken(HttpRequest req, string env, string[] scopes, uint userId, uint partyId, string pid, string authLvl, string consumerOrgNo, string userName, string clientAmr, uint ttl, string delegationSource)
+        public async Task<string> GetPersonalToken(HttpRequest req, string env, string[] scopes, uint userId, uint partyId, string pid, string authLvl, string consumerOrgNo, string userName, string clientAmr, uint ttl, string delegationSource, Guid partyUuid)
         {
             var header = await GetJwtHeader(env);
             var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
@@ -193,6 +198,11 @@ namespace TokenGenerator.Services
 
             if (userName != "") {
                 payload.Add("urn:altinn:username", userName);
+            }
+
+            if(partyUuid != Guid.Empty)
+            {
+                payload.Add("urn:altinn:party:uuid", partyUuid.ToString());
             }
 
             var securityToken = new JwtSecurityToken(header, payload);
@@ -505,6 +515,6 @@ namespace TokenGenerator.Services
             var handler = new JwtSecurityTokenHandler();
 
             return handler.WriteToken(securityToken);
-        }
+        }        
     }
 }
