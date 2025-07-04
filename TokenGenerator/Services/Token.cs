@@ -375,7 +375,7 @@ namespace TokenGenerator.Services
 
         public bool IsValidAuthLvl(string authLvl)
         {
-            return authLvl == "3" || authLvl == "4";
+            return authLvl == "1" || authLvl == "2" || authLvl == "3" || authLvl == "4";
         }
 
         public bool IsValidEnvironment(string env)
