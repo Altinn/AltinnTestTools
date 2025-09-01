@@ -310,7 +310,7 @@ namespace TokenGenerator.Services
             throw new ArgumentException("Invalid issuer");
         }
 
-        public async Task<string> GeSelfIdentifiedUserToken(string env, uint userId, uint partyId, Guid partyUuid, string userName, uint ttl)
+        public async Task<string> GeSelfIdentifiedUserToken(string env, string[] scopes, uint userId, uint partyId, Guid partyUuid, string userName, uint ttl)
         {
             var header = await GetJwtHeader(env);
             var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
@@ -324,7 +324,7 @@ namespace TokenGenerator.Services
                 { "urn:altinn:authenticatemethod", "SelfIdentified" },
                 { "urn:altinn:authlevel", 0 },
                 { "jti", RandomString(43) },
-                { "scope", "altinn:portal/enduser" },
+                { "scope", string.Join(' ', scopes) },
                 { "nbf", dateTimeOffset.ToUnixTimeSeconds() },
                 { "exp", dateTimeOffset.ToUnixTimeSeconds() + ttl },
                 { "iat", dateTimeOffset.ToUnixTimeSeconds() },
