@@ -186,12 +186,12 @@ namespace TokenGenerator.Services
             {
                 payload.Add("delegation_source", delegationSource);
             }
-            
+
             if (userId != 0) {
                 payload.Add("nameid", (int)userId);
                 payload.Add("urn:altinn:userid", (int)userId);
             }
-            
+
             if (partyId != 0) {
                 payload.Add("urn:altinn:partyid", (int)partyId);
             }
@@ -211,7 +211,7 @@ namespace TokenGenerator.Services
             return handler.WriteToken(securityToken);
 
         }
-        
+
         public async Task<string> GetConsentToken(string env, string[] serviceCodes, IQueryCollection queryParameters,
             Guid authorizationCode, string offeredBy, string coveredBy, string handledBy, uint ttl)
         {
@@ -300,14 +300,41 @@ namespace TokenGenerator.Services
                 var signingCertificate = await certificateHelper.GetPlatformAccessTokenSigningCertificate(env, settings.PlatformAccessTokenIssuerName);
                 return CreateAccessToken(appClaim, ttl, settings.PlatformAccessTokenIssuerName, signingCertificate);
             }
-            
+
             if (iss == settings.TtdAccessTokenIssuerName)
             {
                 var signingCertificate = await certificateHelper.GetPlatformAccessTokenSigningCertificate(env, settings.TtdAccessTokenIssuerName);
                 return CreateAccessToken(appClaim, ttl, settings.TtdAccessTokenIssuerName, signingCertificate);
             }
-            
+
             throw new ArgumentException("Invalid issuer");
+        }
+
+        public async Task<string> GeSelfIdentifiedUserToken(string env, uint userId, uint partyId, Guid partyUuid, string userName, uint ttl)
+        {
+            var header = await GetJwtHeader(env);
+            var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
+            var payload = new JwtPayload
+            {
+                { "nameid", (int)userId },
+                { "urn:altinn:userid", (int)userId },
+                { "urn:altinn:username", userName },
+                { "urn:altinn:party:uuid", partyUuid.ToString() },
+                { "urn:altinn:partyid", (int)partyId },
+                { "urn:altinn:authenticatemethod", "SelfIdentified" },
+                { "urn:altinn:authlevel", 0 },
+                { "jti", RandomString(43) },
+                { "scope", "altinn:portal/enduser" },
+                { "nbf", dateTimeOffset.ToUnixTimeSeconds() },
+                { "exp", dateTimeOffset.ToUnixTimeSeconds() + ttl },
+                { "iat", dateTimeOffset.ToUnixTimeSeconds() },
+                { "actual_iss", "altinn-test-tools" },
+            };
+
+            var securityToken = new JwtSecurityToken(header, payload);
+            var handler = new JwtSecurityTokenHandler();
+
+            return handler.WriteToken(securityToken);
         }
 
         public async Task<Dictionary<string, string>> GetTokenList(List<string> claimValues, Func<string, Task<string>> getToken)
@@ -452,8 +479,8 @@ namespace TokenGenerator.Services
                 // https://docs.digdir.no/docs/idporten/oidc/oidc_protocol_new_idporten#new-acr-values
                 _ => "idporten-loa-low"
             };
-        }        
-        
+        }
+
         private string RandomString(int length)
         {
             const string chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-";
@@ -487,7 +514,7 @@ namespace TokenGenerator.Services
                     return "https://tokengenerator";
                 return req.Scheme + "://" + req.Host + "/api/.well-known/oauth-authorization-server";
             }
-            
+
             string tld = (env.ToLowerInvariant().StartsWith("at") || env.ToLowerInvariant().StartsWith("yt01")) ? "cloud" : "no";
             return $"https://platform.{env}.altinn.{tld}/authentication/api/v1/openid/";
         }
@@ -515,6 +542,6 @@ namespace TokenGenerator.Services
             var handler = new JwtSecurityTokenHandler();
 
             return handler.WriteToken(securityToken);
-        }        
+        }
     }
 }

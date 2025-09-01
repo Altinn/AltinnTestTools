@@ -47,6 +47,11 @@ public class Issuer : IIssuer
     private static ECDsa LoadPrivateKeyFromBase64(string base64)
     {
         var keyBytes = Convert.FromBase64String(base64);
+        return LoadPrivateKeyFromBytes(keyBytes);
+    }
+
+    private static ECDsa LoadPrivateKeyFromBytes(byte[] keyBytes)
+    {
         var ecDsa = ECDsa.Create();
         ecDsa.ImportPkcs8PrivateKey(keyBytes, out _);
         return ecDsa;
