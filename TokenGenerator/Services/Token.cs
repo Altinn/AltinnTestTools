@@ -328,6 +328,7 @@ namespace TokenGenerator.Services
                 { "nbf", dateTimeOffset.ToUnixTimeSeconds() },
                 { "exp", dateTimeOffset.ToUnixTimeSeconds() + ttl },
                 { "iat", dateTimeOffset.ToUnixTimeSeconds() },
+                { "iss", GetIssuer(null, env) },
                 { "actual_iss", "altinn-test-tools" },
             };
 
