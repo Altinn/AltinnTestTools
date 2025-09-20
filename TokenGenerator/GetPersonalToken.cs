@@ -88,9 +88,10 @@ public class GetPersonalToken
                 return new BadRequestObjectResult("Could not retrieve environment identifiers. Check that the pid is valid for the specified environment.");
             }
 
-            userId = result.UserId;
-            partyId = result.PartyId;
-            partyUuid = result.PartyUuid;
+            userId = result.Party.User.UserId;
+            userName = result.Party.User.Username;
+            partyId = result.Party.PartyId;
+            partyUuid = result.Party.Uuid;
         }
 
         pid ??= randomIdentifier.GetRandomPersonalIdentifiers(1).First();
