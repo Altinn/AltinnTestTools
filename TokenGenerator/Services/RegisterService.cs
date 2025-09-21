@@ -1,4 +1,5 @@
 using Altinn.Register.Models;
+using Microsoft.Extensions.Options;
 using System;
 using System.Linq;
 using System.Net.Http;
@@ -18,12 +19,12 @@ public class RegisterService : IRegisterService
         this.httpClient = httpClient;
     }
 
-    public async Task<(bool Success, Party Party)> GetEnvironmentIdentifiers(string env, string pid, string platformAccessToken, string subscriptionKey, CancellationToken cancellationToken)
+    public async Task<(bool Success, uint UserId, uint PartyId, Guid PartyUuid)> GetEnvironmentIdentifiers(string env, string pid, string platformAccessToken, string subscriptionKey, CancellationToken cancellationToken)
     {
-        string requestUri = $"https://platform.{env}.altinn.cloud/register/api/v1/access-management/parties/query?fields=user";
+        string requestUri = $"https://platform.{env}.altinn.cloud/register/api/v1/access-management/parties/query";
         if (env.Equals("tt02", StringComparison.OrdinalIgnoreCase))
         {
-            requestUri = $"https://platform.tt02.altinn.no/register/api/v1/access-management/parties/query?fields=user";
+            requestUri = $"https://platform.tt02.altinn.no/register/api/v1/access-management/parties/query";
         }
 
         ListObject<string> body = ListObject.Create(new[] { pid });
@@ -41,12 +42,13 @@ public class RegisterService : IRegisterService
             ListObject<Party> result = await response.Content.ReadFromJsonAsync<ListObject<Party>>(cancellationToken: cancellationToken);
             if (result == null || !result.Items.Any())
             {
-                return (false, null);
+                return (false, 0, 0, Guid.Empty);
             }
 
-            return (true, result.Items.First());
+            var party = result.Items.First();
+            return (true, party.UserId, party.PartyId, party.Uuid);
         }
         
-        return (false, null);
+        return (false, 0, 0, Guid.Empty);
     }
 }
