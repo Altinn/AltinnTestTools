@@ -21,7 +21,6 @@
     "EnvironmentsApiToken": "none:;dev:altinn-testtools-kv",
     "EnvironmentsConsentToken": "dev:altinn-testtools-kv",
     "EnvironmentsTtdAccessToken": "dev:altinn-testtools-kv",
-    "EnvironmentSubscriptionKeys": "dev:mysubscriptionkey",
     "TokenAuthorizationWellKnownEndpoint": "https://test.maskinporten.no/.well-known/oauth-authorization-server",
     "IssuerSigningKeys": "key1:MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgJjBP7srUVMWuPAzzSZPiPnmpYdsDuQg28p3d4oj9+UahRANCAAQ+0RXI0tdgdkhEVWb/tdkIdstPsMo8JnBCJwmV98/LOAnROt4EAiSeFWTwCtF64wBiDICzAHAiNXxCik6ZL51G"
   }
