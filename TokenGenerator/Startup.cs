@@ -35,6 +35,7 @@ namespace TokenGenerator
             builder.Services.AddScoped<IAuthorizationBasic, AuthorizationBasic>();
             builder.Services.AddScoped<IRequestValidator, RequestValidator>();
             builder.Services.AddScoped<IAuthorization, Authorization>();
+            builder.Services.AddHttpClient<IRegisterService, RegisterService>();
         }
     }
 }
