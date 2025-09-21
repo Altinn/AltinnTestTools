@@ -28,12 +28,10 @@ namespace TokenGenerator
         public string EnvironmentsApiToken { get; set; }
         public string EnvironmentsConsentToken { get; set; }
         public string EnvironmentsTtdAccessToken { get; set; }
-        public string EnvironmentSubscriptionKeys { get; set; }
         public string IssuerSigningKeys { get; set; }
         public Dictionary<string, string> EnvironmentsApiTokenDict => GetKeyValuePairs(EnvironmentsApiToken);
         public Dictionary<string, string> EnvironmentsConsentTokenDict => GetKeyValuePairs(EnvironmentsConsentToken);
         public Dictionary<string, string> EnvironmentsTtdAccessTokenDict => GetKeyValuePairs(EnvironmentsTtdAccessToken);
-        public Dictionary<string, string> EnvPlatformSubscriptionKeyDict => GetKeyValuePairs(EnvironmentSubscriptionKeys);
         public Dictionary<string, string> IssuerSigningKeysDict => GetKeyValuePairs(IssuerSigningKeys); 
 
         private Dictionary<string, string> GetKeyValuePairs(string stringfieldToSplit, char fieldSeparator = ';', char keyValueSeparator = ':')
