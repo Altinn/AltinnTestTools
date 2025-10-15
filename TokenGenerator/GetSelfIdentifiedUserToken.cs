@@ -36,11 +36,13 @@ namespace TokenGenerator
             var rnd = new Random();
 
             requestValidator.ValidateQueryParam("env", true, tokenHelper.IsValidEnvironment, out string env);
-            requestValidator.ValidateQueryParam("userId", true, uint.TryParse, out uint userId);
+            requestValidator.ValidateQueryParam("userId", false, uint.TryParse, out uint userId);
             requestValidator.ValidateQueryParam("scopes", false, tokenHelper.TryParseScopes, out string[] scopes, new[] { "altinn:portal/enduser" });
             requestValidator.ValidateQueryParam("partyId", false, uint.TryParse, out uint partyId, (uint)rnd.Next(5000000, 7000000));
             requestValidator.ValidateQueryParam("partyuuid", false, Guid.TryParse, out Guid partyUuid, Guid.NewGuid());
             requestValidator.ValidateQueryParam("username", false, tokenHelper.IsValidIdentifier, out string username, $"SIUser{rnd.Next(1000, 9999)}");
+            requestValidator.ValidateQueryParam("email", true, tokenHelper.IsValidEmail, out string email);
+
             requestValidator.ValidateQueryParam<uint>("ttl", false, uint.TryParse, out uint ttl, 1800);
 
             if (requestValidator.GetErrors().Count > 0)
@@ -48,7 +50,7 @@ namespace TokenGenerator
                  return new BadRequestObjectResult(requestValidator.GetErrors());
             }
 
-            string token = await tokenHelper.GeSelfIdentifiedUserToken(env, scopes, userId, partyId, partyUuid, username, ttl);
+            string token = await tokenHelper.GeSelfIdentifiedUserToken(env, scopes, userId, partyId, partyUuid, username, email, ttl);
 
             if (!string.IsNullOrEmpty(req.Query["dump"]))
             {

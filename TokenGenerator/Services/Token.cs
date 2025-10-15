@@ -310,12 +310,13 @@ namespace TokenGenerator.Services
             throw new ArgumentException("Invalid issuer");
         }
 
-        public async Task<string> GeSelfIdentifiedUserToken(string env, string[] scopes, uint userId, uint partyId, Guid partyUuid, string userName, uint ttl)
+        public async Task<string> GeSelfIdentifiedUserToken(string env, string[] scopes, uint userId, uint partyId, Guid partyUuid, string userName, string email, uint ttl)
         {
             var header = await GetJwtHeader(env);
             var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
             var payload = new JwtPayload
             {
+                // NOTE! This is an interim solution until the full list of claims is defined.
                 { "nameid", (int)userId },
                 { "urn:altinn:userid", (int)userId },
                 { "urn:altinn:username", userName },
@@ -330,6 +331,9 @@ namespace TokenGenerator.Services
                 { "iat", dateTimeOffset.ToUnixTimeSeconds() },
                 { "iss", GetIssuer(null, env) },
                 { "actual_iss", "altinn-test-tools" },
+                // These are the salient claims from https://docs.digdir.no/docs/idporten/oidc/oidc_func_emaillogin.html
+                { "arm", new[] { "Selfregistered-email" } },
+                { "email", email }
             };
 
             var securityToken = new JwtSecurityToken(header, payload);
@@ -374,6 +378,11 @@ namespace TokenGenerator.Services
 
             scopes = input.Replace(',', ' ').Split(' ', StringSplitOptions.RemoveEmptyEntries);
             return true;
+        }
+
+        public bool IsValidEmail(string identifier)
+        {
+            return !string.IsNullOrEmpty(identifier) && identifier.Length <= 50 && Regex.IsMatch(identifier, "^[a-z0-9_-.+]+@[a-z0-9_-.]+$");
         }
 
         public bool IsValidIdentifier(string identifier)
