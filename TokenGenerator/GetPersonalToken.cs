@@ -45,13 +45,13 @@ namespace TokenGenerator
             requestValidator.ValidateQueryParam("pid", false, tokenHelper.IsValidPid, out string pid);
             requestValidator.ValidateQueryParam("bulkCount", false, uint.TryParse, out uint bulkCount);
             requestValidator.ValidateQueryParam("authLvl", false, tokenHelper.IsValidAuthLvl, out string authLvl, "3");
-            requestValidator.ValidateQueryParam("consumerOrgNo", false, tokenHelper.IsValidPidOrOrgNo, out string consumerOrgNo, "991825827");
+            requestValidator.ValidateQueryParam("consumerOrgNo", false, tokenHelper.IsValidPidOrOrgNo, out string consumerOrgNo);
             requestValidator.ValidateQueryParam("partyuuid", false, Guid.TryParse, out Guid partyUuid);
             requestValidator.ValidateQueryParam("userName", false, tokenHelper.IsValidIdentifier, out string userName, "");
             requestValidator.ValidateQueryParam("clientAmr", false, tokenHelper.IsValidIdentifier, out string clientAmr, "virksomhetssertifikat");
             requestValidator.ValidateQueryParam<uint>("ttl", false, uint.TryParse, out uint ttl, 1800);
             requestValidator.ValidateQueryParam("delegationSource", false, tokenHelper.IsValidUri, out string delegationSource);
-            
+
             if (requestValidator.GetErrors().Count > 0)
             {
                  return new BadRequestObjectResult(requestValidator.GetErrors());
@@ -60,12 +60,12 @@ namespace TokenGenerator
             if (bulkCount > 0)
             {
                 var randomList = randomIdentifier.GetRandomPersonalIdentifiers(bulkCount);
-                var tokenList = await tokenHelper.GetTokenList(randomList, async randomPid => 
+                var tokenList = await tokenHelper.GetTokenList(randomList, async randomPid =>
                     await tokenHelper.GetPersonalToken(req, env, scopes, userId, partyId, randomPid, authLvl, consumerOrgNo, userName, clientAmr, ttl, delegationSource, partyUuid));
 
                 return new OkObjectResult(tokenList);
             }
-            
+
             pid ??= randomIdentifier.GetRandomPersonalIdentifiers(1).First();
             string token = await tokenHelper.GetPersonalToken(req, env, scopes, userId, partyId, pid, authLvl, consumerOrgNo, userName, clientAmr, ttl, delegationSource, partyUuid);
 

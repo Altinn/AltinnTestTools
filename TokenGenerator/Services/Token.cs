@@ -175,8 +175,6 @@ namespace TokenGenerator.Services
                 { "scope", string.Join(' ', scopes) },
                 { "exp", dateTimeOffset.ToUnixTimeSeconds() + ttl },
                 { "iat", dateTimeOffset.ToUnixTimeSeconds() },
-                { "client_orgno", consumerOrgNo },
-                { "consumer", GetOrgNoObject(consumerOrgNo) },
                 { "iss", GetIssuer(req, env) },
                 { "actual_iss", "altinn-test-tools" },
                 { "nbf", dateTimeOffset.ToUnixTimeSeconds() },
@@ -185,6 +183,12 @@ namespace TokenGenerator.Services
             if (!string.IsNullOrEmpty(delegationSource))
             {
                 payload.Add("delegation_source", delegationSource);
+            }
+
+            if (!string.IsNullOrEmpty(consumerOrgNo))
+            {
+                payload.Add("client_orgno", GetOrgNoObject(consumerOrgNo));
+                payload.Add("consumer", GetOrgNoObject(consumerOrgNo));
             }
 
             if (userId != 0) {
