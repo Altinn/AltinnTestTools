@@ -386,17 +386,17 @@ namespace TokenGenerator.Services
 
         public bool IsValidEmail(string identifier)
         {
-            return !string.IsNullOrEmpty(identifier) && identifier.Length <= 50 && Regex.IsMatch(identifier, "^[a-z0-9_.+@-]+$");
+            return !string.IsNullOrEmpty(identifier) && identifier.Length <= 50 && Regex.IsMatch(identifier, "^[^@]+@[^@]+$");
         }
 
         public bool IsValidIdentifier(string identifier)
         {
-            return !string.IsNullOrEmpty(identifier) && identifier.Length <= 50 && Regex.IsMatch(identifier, "^[a-z0-9_-]+$");
+            return !string.IsNullOrEmpty(identifier) && identifier.Length <= 50 && Regex.IsMatch(identifier, "^[a-zA-Z0-9_-]+$");
         }
 
         public bool IsValidDottedIdentifier(string identifier)
         {
-            return !string.IsNullOrEmpty(identifier) && identifier.Length <= 50 && Regex.IsMatch(identifier, @"^(?:[a-z0-9_-]\.?)+[a-z0-9_-]$");
+            return !string.IsNullOrEmpty(identifier) && identifier.Length <= 50 && Regex.IsMatch(identifier, @"^(?:[a-zA-Z0-9_-]\.?)+[a-zA-Z0-9_-]$");
         }
 
         public bool IsValidOrgNo(string orgNo)
