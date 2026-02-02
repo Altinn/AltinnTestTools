@@ -370,7 +370,7 @@ namespace TokenGenerator.Services
                 { "urn:altinn:username", "epost:" + email },
                 { "orignaliss", "idporten" },
                 { "email", email },
-                { "urn:altinn:party:external-identifer", "urn:altinn:person:idporten-email:" + email },
+                { "urn:altinn:party:external-identifier", "urn:altinn:person:idporten-email:" + email },
                 { "acr", "selfregistered-email" },
                 { "urn:altinn:authlevel", 0 },
                 { "amr", new[] { "Selfregistered-email" } },
