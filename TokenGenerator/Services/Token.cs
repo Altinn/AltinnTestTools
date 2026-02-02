@@ -323,7 +323,7 @@ namespace TokenGenerator.Services
             // https://github.com/Altinn/dialogporten/issues/3362#issuecomment-3834123082
             var payload = new JwtPayload
             {
-                { "sub", partyUuid.ToString() },
+                { "sub", "urn:altinn:party:uuid:" + partyUuid },
                 { "sid", sidJti },
                 { "iss", GetIssuer(null, env) },
                 { "urn:altinn:party:uuid", partyUuid.ToString() },
@@ -360,7 +360,7 @@ namespace TokenGenerator.Services
             // https://github.com/Altinn/dialogporten/issues/3362#issuecomment-3834123082
             var payload = new JwtPayload
             {
-                { "sub", partyUuid.ToString() },
+                { "sub", "urn:altinn:party:uuid:" + partyUuid },
                 { "sid", sidJti },
                 { "iss", GetIssuer(null, env) },
                 { "urn:altinn:party:uuid", partyUuid.ToString() },
