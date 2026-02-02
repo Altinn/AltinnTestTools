@@ -14,7 +14,8 @@ namespace TokenGenerator.Services.Interfaces
         Task<string> GetConsentToken(string env, string[] serviceCodes, IQueryCollection queryParameters, Guid authorizationCode, string offeredBy, string coveredBy, string handledBy, uint ttl);
         Task<string> GetPlatformToken(string env, string appClaim, uint ttl);
         Task<string> GetPlatformAccessToken(string env, string appClaim, uint ttl, string iss = "platform");
-        Task<string> GeSelfIdentifiedUserToken(string env, string[] scopes, uint userId, uint partyId, Guid partyUuid, string userName, string email, uint ttl);
+        Task<string> GetSelfIdentifiedUserToken(string env, string[] scopes, uint userId, uint partyId, Guid partyUuid, string userName, uint ttl);
+        Task<string> GetSelfRegisteredEmailUserToken(string env, string[] scopes, uint userId, uint partyId, Guid partyUuid, string email, uint ttl);
         Task<Dictionary<string, string>> GetTokenList(List<string> claimValues, Func<string, Task<string>> getToken);
 
         string Dump(string token);

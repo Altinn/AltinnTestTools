@@ -314,30 +314,75 @@ namespace TokenGenerator.Services
             throw new ArgumentException("Invalid issuer");
         }
 
-        public async Task<string> GeSelfIdentifiedUserToken(string env, string[] scopes, uint userId, uint partyId, Guid partyUuid, string userName, string email, uint ttl)
+        public async Task<string> GetSelfIdentifiedUserToken(string env, string[] scopes, uint userId, uint partyId, Guid partyUuid, string userName, uint ttl)
         {
             var header = await GetJwtHeader(env);
             var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
+            var sidJti = RandomString(43);
+
+            // https://github.com/Altinn/dialogporten/issues/3362#issuecomment-3834123082
             var payload = new JwtPayload
             {
-                // NOTE! This is an interim solution until the full list of claims is defined.
-                { "nameid", (int)userId },
+                { "sub", partyUuid.ToString() },
+                { "sid", sidJti },
+                { "iss", GetIssuer(null, env) },
+                { "urn:altinn:party:uuid", partyUuid.ToString() },
+                { "jti", sidJti },
+                { "urn:altinn:partyid", (int)partyId },
                 { "urn:altinn:userid", (int)userId },
                 { "urn:altinn:username", userName },
-                { "urn:altinn:party:uuid", partyUuid.ToString() },
-                { "urn:altinn:partyid", (int)partyId },
-                { "urn:altinn:authenticatemethod", "SelfIdentified" },
+                { "orignaliss", "altinn2" },
+                { "acr", "idporten-loa-low" },
                 { "urn:altinn:authlevel", 0 },
-                { "jti", RandomString(43) },
+                { "amr", new[] { "SelfIdentified" } },
+                { "urn:altinn:authenticatemethod", "SelfIdentified" },
                 { "scope", string.Join(' ', scopes) },
                 { "nbf", dateTimeOffset.ToUnixTimeSeconds() },
                 { "exp", dateTimeOffset.ToUnixTimeSeconds() + ttl },
                 { "iat", dateTimeOffset.ToUnixTimeSeconds() },
-                { "iss", GetIssuer(null, env) },
+
                 { "actual_iss", "altinn-test-tools" },
-                // These are the salient claims from https://docs.digdir.no/docs/idporten/oidc/oidc_func_emaillogin.html
-                { "arm", new[] { "Selfregistered-email" } },
-                { "email", email }
+
+            };
+
+            var securityToken = new JwtSecurityToken(header, payload);
+            var handler = new JwtSecurityTokenHandler();
+
+            return handler.WriteToken(securityToken);
+        }
+
+        public async Task<string> GetSelfRegisteredEmailUserToken(string env, string[] scopes, uint userId, uint partyId, Guid partyUuid, string email, uint ttl)
+        {
+            var header = await GetJwtHeader(env);
+            var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
+            var sidJti = RandomString(43);
+
+            // https://github.com/Altinn/dialogporten/issues/3362#issuecomment-3834123082
+            var payload = new JwtPayload
+            {
+                { "sub", partyUuid.ToString() },
+                { "sid", sidJti },
+                { "iss", GetIssuer(null, env) },
+                { "urn:altinn:party:uuid", partyUuid.ToString() },
+                { "jti", sidJti },
+                { "urn:altinn:partyid", (int)partyId },
+                { "urn:altinn:userid", (int)userId },
+                { "urn:altinn:username", "epost:" + email },
+                { "orignaliss", "idporten" },
+                { "email", email },
+                { "urn:altinn:party:external-identifer", "urn:altinn:person:idporten-email:" + email },
+                { "acr", "selfregistered-email" },
+                { "urn:altinn:authlevel", 0 },
+                { "amr", new[] { "Selfregistered-email" } },
+                { "urn:altinn:authenticatemethod", "IdportenEpost" },
+                { "auth_time", dateTimeOffset.ToUnixTimeSeconds() },
+                { "scope", string.Join(' ', scopes) },
+                { "nbf", dateTimeOffset.ToUnixTimeSeconds() },
+                { "exp", dateTimeOffset.ToUnixTimeSeconds() + ttl },
+                { "iat", dateTimeOffset.ToUnixTimeSeconds() },
+
+                { "actual_iss", "altinn-test-tools" },
+
             };
 
             var securityToken = new JwtSecurityToken(header, payload);

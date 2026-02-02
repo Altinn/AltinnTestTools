@@ -28,6 +28,13 @@ The application requires authentication. See https://altinn.github.io/docs/api/r
 #### Legacy (Altinn 2) Enterprise user tokens (aka Maskinporten + Enterprise user authentication):
 `https://altinn-testtools-token-generator.azurewebsites.net/api/GetEnterpriseUserToken?env={environment}&orgNo={orgNo}&partyId={partyId}&userId={userId}&userName={userName}`
 
+#### Legacy (Altinn 2) self-identified user tokens
+`https://altinn-testtools-token-generator.azurewebsites.net/api/GetSelfIdentifiedUserToken?env={environment}&orgNo={orgNo}&partyId={partyId}&userId={userId}&userName={userName}`
+
+#### ID-porten self-registered email user tokens
+`https://altinn-testtools-token-generator.azurewebsites.net/api/GetSelfRegisteredEmailUserToken?env={environment}&orgNo={orgNo}&partyId={partyId}&userId={userId}&email={email}`
+
+
 #### Optional parameters:
 
 * `supplierOrgNo` (Enterprise tokens only)

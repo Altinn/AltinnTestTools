@@ -9,14 +9,14 @@ using TokenGenerator.Services.Interfaces;
 
 namespace TokenGenerator
 {
-    public class GetSelfIdentifiedUserToken
+    public class GetSelfRegisteredEmailUserToken
     {
         private readonly IToken tokenHelper;
         private readonly IRequestValidator requestValidator;
         private readonly IAuthorization authorization;
         private readonly Settings settings;
 
-        public GetSelfIdentifiedUserToken(IToken tokenHelper, IRequestValidator requestValidator, IAuthorization authorization, IOptions<Settings> settings)
+        public GetSelfRegisteredEmailUserToken(IToken tokenHelper, IRequestValidator requestValidator, IAuthorization authorization, IOptions<Settings> settings)
         {
             this.tokenHelper = tokenHelper;
             this.requestValidator = requestValidator;
@@ -24,7 +24,7 @@ namespace TokenGenerator
             this.settings = settings.Value;
         }
 
-        [FunctionName(nameof(GetSelfIdentifiedUserToken))]
+        [FunctionName(nameof(GetSelfRegisteredEmailUserToken))]
         public async Task<ActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = null)] HttpRequest req)
         {
             ActionResult failedAuthorizationResult = await authorization.Authorize(settings.AuthorizedScopePersonal);
@@ -40,7 +40,7 @@ namespace TokenGenerator
             requestValidator.ValidateQueryParam("scopes", false, tokenHelper.TryParseScopes, out string[] scopes, new[] { "altinn:portal/enduser" });
             requestValidator.ValidateQueryParam("partyId", false, uint.TryParse, out uint partyId, (uint)rnd.Next(5000000, 7000000));
             requestValidator.ValidateQueryParam("partyuuid", false, Guid.TryParse, out Guid partyUuid, Guid.NewGuid());
-            requestValidator.ValidateQueryParam("username", false, tokenHelper.IsValidIdentifier, out string username, $"SIUser{rnd.Next(1000, 9999)}");
+            requestValidator.ValidateQueryParam("email", true, tokenHelper.IsValidEmail, out string email);
 
             requestValidator.ValidateQueryParam<uint>("ttl", false, uint.TryParse, out uint ttl, 1800);
 
@@ -49,7 +49,7 @@ namespace TokenGenerator
                  return new BadRequestObjectResult(requestValidator.GetErrors());
             }
 
-            string token = await tokenHelper.GetSelfIdentifiedUserToken(env, scopes, userId, partyId, partyUuid, username, ttl);
+            string token = await tokenHelper.GetSelfRegisteredEmailUserToken(env, scopes, userId, partyId, partyUuid, email, ttl);
 
             if (!string.IsNullOrEmpty(req.Query["dump"]))
             {
