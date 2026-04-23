@@ -35,7 +35,7 @@ namespace TokenGenerator.Services
             this.issuer = issuer;
         }
 
-        public async Task<string> GetEnterpriseToken(HttpRequest req, string env, string[] scopes, string org, string orgNo, string supplierOrgNo, uint ttl, string delegationSource)
+        public async Task<string> GetEnterpriseToken(HttpRequest req, string env, string[] scopes, string org, string orgNo, string supplierOrgNo, uint ttl, string delegationSource, string clientId)
         {
             var header = await GetJwtHeader(env);
             var dateTimeOffset = new DateTimeOffset(DateTime.UtcNow);
@@ -45,7 +45,7 @@ namespace TokenGenerator.Services
                 { "token_type", "Bearer" },
                 { "exp", dateTimeOffset.ToUnixTimeSeconds() + ttl },
                 { "iat", dateTimeOffset.ToUnixTimeSeconds() },
-                { "client_id", Guid.NewGuid().ToString() },
+                { "client_id", string.IsNullOrEmpty(clientId) ? Guid.NewGuid().ToString() : clientId },
                 { "jti", RandomString(43) },
                 { "consumer", GetOrgNoObject(orgNo) },
                 { "urn:altinn:orgNumber", orgNo },

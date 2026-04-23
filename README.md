@@ -17,7 +17,7 @@ The application requires authentication. See https://altinn.github.io/docs/api/r
 
 
 #### Enterprise tokens (aka Maskinporten):
-`https://altinn-testtools-token-generator.azurewebsites.net/api/GetEnterpriseToken?env={environment}&scopes={scopes}&org={orgName}&orgNo={orgNo}`
+`https://altinn-testtools-token-generator.azurewebsites.net/api/GetEnterpriseToken?env={environment}&scopes={scopes}&org={orgName}&orgNo={orgNo}&clientId={clientId}`
 
 #### Person tokens (aka ID-porten)
 `https://altinn-testtools-token-generator.azurewebsites.net/api/GetPersonalToken?env={environment}&scopes={scopes}&userId={userId}&partyId={partyId}&pid={pid}`
@@ -38,6 +38,7 @@ The application requires authentication. See https://altinn.github.io/docs/api/r
 #### Optional parameters:
 
 * `supplierOrgNo` (Enterprise tokens only)
+* `clientId` (Enterprise tokens only. Default: random GUID in the `client_id` claim)
 * `ttl` (Default: 1800 seconds)
 * `authLvl` (Personal tokens only. Default: `3`)
 * `consumerOrgNo` (Personal tokens only. Default: `991825827`)

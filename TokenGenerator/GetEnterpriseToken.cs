@@ -43,6 +43,7 @@ namespace TokenGenerator
             requestValidator.ValidateQueryParam("supplierOrgNo", false, tokenHelper.IsValidOrgNo, out string supplierOrgNo);
             requestValidator.ValidateQueryParam<uint>("ttl", false, uint.TryParse, out uint ttl, 1800);
             requestValidator.ValidateQueryParam("delegationSource", false, tokenHelper.IsValidUri, out string delegationSource);
+            requestValidator.ValidateQueryParam("clientId", false, clientId => !string.IsNullOrEmpty(clientId), out string clientId);
 
             if (requestValidator.GetErrors().Count > 0)
             {
@@ -53,13 +54,13 @@ namespace TokenGenerator
             {
                 var randomList = randomIdentifier.GetRandomEnterpriseIdentifiers(bulkCount);
                 var tokenList = await tokenHelper.GetTokenList(randomList, async randomOrgNo => 
-                    await tokenHelper.GetEnterpriseToken(req, env, scopes, org, randomOrgNo, supplierOrgNo, ttl, delegationSource));
+                    await tokenHelper.GetEnterpriseToken(req, env, scopes, org, randomOrgNo, supplierOrgNo, ttl, delegationSource, clientId));
                 
                 return new OkObjectResult(tokenList);
             }
 
             orgNo ??= randomIdentifier.GetRandomEnterpriseIdentifiers(1).First();
-            string token = await tokenHelper.GetEnterpriseToken(req, env, scopes, org, orgNo, supplierOrgNo, ttl, delegationSource);
+            string token = await tokenHelper.GetEnterpriseToken(req, env, scopes, org, orgNo, supplierOrgNo, ttl, delegationSource, clientId);
 
             if (!string.IsNullOrEmpty(req.Query["dump"]))
             {
