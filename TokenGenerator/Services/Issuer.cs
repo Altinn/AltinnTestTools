@@ -9,15 +9,15 @@ using TokenGenerator.Services.Interfaces;
 
 namespace TokenGenerator.Services;
 
-public class Issuer : IIssuer
+public class Issuer(IOptions<Settings> settings, ILogger<Issuer> logger) : IIssuer
 {
-    private readonly List<(string KeyId, ECDsaSecurityKey PrivateKey, JsonWebKey PublicKey)> activeKeys;
-    
-    public Issuer(IOptions<Settings> settings, ILogger<Issuer> logger)
+    private readonly List<(string KeyId, ECDsaSecurityKey PrivateKey, JsonWebKey PublicKey)> activeKeys = LoadActiveKeys(settings.Value, logger);
+
+    private static List<(string KeyId, ECDsaSecurityKey PrivateKey, JsonWebKey PublicKey)> LoadActiveKeys(Settings settings, ILogger<Issuer> logger)
     {
         var keys = new List<(string, ECDsaSecurityKey, JsonWebKey)>();
-        
-        foreach (var (keyId, base64PrivateKey) in settings.Value.IssuerSigningKeysDict)
+
+        foreach (var (keyId, base64PrivateKey) in settings.IssuerSigningKeysDict)
         {
             try
             {
@@ -35,7 +35,7 @@ public class Issuer : IIssuer
         if (!keys.Any())
             logger.LogWarning("No valid keys loaded, the issuer will not be able to sign tokens");
 
-        activeKeys = keys;
+        return keys;
     }
 
     public SecurityKey GetSigningKey() => activeKeys.First().PrivateKey;

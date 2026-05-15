@@ -8,12 +8,7 @@ namespace TokenGenerator.Services;
 
 public class SelfSignedCertificate : ICertificateService
 {
-    private readonly Lazy<X509Certificate2> lazyCertificate;
-
-    public SelfSignedCertificate()
-    {
-        lazyCertificate = new Lazy<X509Certificate2>(GenerateCertificate);
-    }
+    private readonly Lazy<X509Certificate2> lazyCertificate = new(GenerateCertificate);
 
     public Task<X509Certificate2> GetApiTokenSigningCertificate(string environment)
     {
@@ -30,9 +25,9 @@ public class SelfSignedCertificate : ICertificateService
         return Task.FromResult(lazyCertificate.Value);
     }
 
-    private X509Certificate2 GenerateCertificate()
+    private static X509Certificate2 GenerateCertificate()
     {
-        using RSA rsa = RSA.Create(2048);
+        using var rsa = RSA.Create(2048);
         var request = new CertificateRequest(
             "cn=LocalTestCertificate",
             rsa,

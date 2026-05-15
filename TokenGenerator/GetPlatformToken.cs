@@ -1,54 +1,42 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using TokenGenerator.Services.Interfaces;
 
-namespace TokenGenerator
+namespace TokenGenerator;
+
+public class GetPlatformToken(IToken tokenHelper, IRequestValidator requestValidator, IAuthorization authorization, IOptions<Settings> settings)
 {
-    public class GetPlatformToken
+    private readonly Settings settings = settings.Value;
+
+    [Function(nameof(GetPlatformToken))]
+    public async Task<ActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = null)] HttpRequest req)
     {
-        private readonly IToken tokenHelper;
-        private readonly IRequestValidator requestValidator;
-        private readonly IAuthorization authorization;
-        private readonly Settings settings;
-
-        public GetPlatformToken(IToken tokenHelper, IRequestValidator requestValidator, IAuthorization authorization, IOptions<Settings> settings)
+        var failedAuthorizationResult = await authorization.Authorize(settings.AuthorizedScopePlatform, req);
+        if (failedAuthorizationResult != null)
         {
-            this.tokenHelper = tokenHelper;
-            this.requestValidator = requestValidator;
-            this.authorization = authorization;
-            this.settings = settings.Value;
+            return failedAuthorizationResult;
         }
 
-        [FunctionName(nameof(GetPlatformToken))]
-        public async Task<ActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = null)] HttpRequest req)
+        requestValidator.SetRequest(req);
+        requestValidator.ValidateQueryParam("env", true, tokenHelper.IsValidEnvironment, out var env);
+        requestValidator.ValidateQueryParam("app", true, tokenHelper.IsValidDottedIdentifier, out var appClaim);
+        requestValidator.ValidateQueryParam<uint>("ttl", false, uint.TryParse, out var ttl, 1800);
+
+        if (requestValidator.GetErrors().Count > 0)
         {
-            ActionResult failedAuthorizationResult = await authorization.Authorize(settings.AuthorizedScopePlatform);
-            if (failedAuthorizationResult != null)
-            {
-                return failedAuthorizationResult;
-            }
-
-            requestValidator.ValidateQueryParam("env", true, tokenHelper.IsValidEnvironment, out string env);
-            requestValidator.ValidateQueryParam("app", true, tokenHelper.IsValidDottedIdentifier, out string appClaim);
-            requestValidator.ValidateQueryParam<uint>("ttl", false, uint.TryParse, out uint ttl, 1800);
-
-            if (requestValidator.GetErrors().Count > 0)
-            {
-                 return new BadRequestObjectResult(requestValidator.GetErrors());
-            }
-
-            string token = await tokenHelper.GetPlatformToken(env, appClaim, ttl);
-
-            if (!string.IsNullOrEmpty(req.Query["dump"]))
-            {
-                return new OkObjectResult(tokenHelper.Dump(token));
-            }
-
-            return new OkObjectResult(token);
+            return new BadRequestObjectResult(requestValidator.GetErrors());
         }
+
+        var token = await tokenHelper.GetPlatformToken(env, appClaim, ttl);
+
+        if (!string.IsNullOrEmpty(req.Query["dump"]))
+        {
+            return new OkObjectResult(tokenHelper.Dump(token));
+        }
+
+        return new OkObjectResult(token);
     }
 }

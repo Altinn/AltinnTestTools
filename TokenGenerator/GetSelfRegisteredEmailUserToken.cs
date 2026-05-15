@@ -1,62 +1,50 @@
 using System;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using TokenGenerator.Services.Interfaces;
 
-namespace TokenGenerator
+namespace TokenGenerator;
+
+public class GetSelfRegisteredEmailUserToken(IToken tokenHelper, IRequestValidator requestValidator, IAuthorization authorization, IOptions<Settings> settings)
 {
-    public class GetSelfRegisteredEmailUserToken
+    private readonly Settings settings = settings.Value;
+
+    [Function(nameof(GetSelfRegisteredEmailUserToken))]
+    public async Task<ActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = null)] HttpRequest req)
     {
-        private readonly IToken tokenHelper;
-        private readonly IRequestValidator requestValidator;
-        private readonly IAuthorization authorization;
-        private readonly Settings settings;
-
-        public GetSelfRegisteredEmailUserToken(IToken tokenHelper, IRequestValidator requestValidator, IAuthorization authorization, IOptions<Settings> settings)
+        var failedAuthorizationResult = await authorization.Authorize(settings.AuthorizedScopePersonal, req);
+        if (failedAuthorizationResult != null)
         {
-            this.tokenHelper = tokenHelper;
-            this.requestValidator = requestValidator;
-            this.authorization = authorization;
-            this.settings = settings.Value;
+            return failedAuthorizationResult;
         }
 
-        [FunctionName(nameof(GetSelfRegisteredEmailUserToken))]
-        public async Task<ActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = null)] HttpRequest req)
+        var rnd = new Random();
+
+        requestValidator.SetRequest(req);
+        requestValidator.ValidateQueryParam("env", true, tokenHelper.IsValidEnvironment, out var env);
+        requestValidator.ValidateQueryParam("userId", false, uint.TryParse, out uint userId);
+        requestValidator.ValidateQueryParam("scopes", false, tokenHelper.TryParseScopes, out string[] scopes, ["altinn:portal/enduser"]);
+        requestValidator.ValidateQueryParam("partyId", false, uint.TryParse, out var partyId, (uint)rnd.Next(5000000, 7000000));
+        requestValidator.ValidateQueryParam("partyuuid", false, Guid.TryParse, out var partyUuid, Guid.NewGuid());
+        requestValidator.ValidateQueryParam("email", true, tokenHelper.IsValidEmail, out var email);
+
+        requestValidator.ValidateQueryParam<uint>("ttl", false, uint.TryParse, out var ttl, 1800);
+
+        if (requestValidator.GetErrors().Count > 0)
         {
-            ActionResult failedAuthorizationResult = await authorization.Authorize(settings.AuthorizedScopePersonal);
-            if (failedAuthorizationResult != null)
-            {
-                return failedAuthorizationResult;
-            }
-
-            var rnd = new Random();
-
-            requestValidator.ValidateQueryParam("env", true, tokenHelper.IsValidEnvironment, out string env);
-            requestValidator.ValidateQueryParam("userId", false, uint.TryParse, out uint userId);
-            requestValidator.ValidateQueryParam("scopes", false, tokenHelper.TryParseScopes, out string[] scopes, new[] { "altinn:portal/enduser" });
-            requestValidator.ValidateQueryParam("partyId", false, uint.TryParse, out uint partyId, (uint)rnd.Next(5000000, 7000000));
-            requestValidator.ValidateQueryParam("partyuuid", false, Guid.TryParse, out Guid partyUuid, Guid.NewGuid());
-            requestValidator.ValidateQueryParam("email", true, tokenHelper.IsValidEmail, out string email);
-
-            requestValidator.ValidateQueryParam<uint>("ttl", false, uint.TryParse, out uint ttl, 1800);
-
-            if (requestValidator.GetErrors().Count > 0)
-            {
-                 return new BadRequestObjectResult(requestValidator.GetErrors());
-            }
-
-            string token = await tokenHelper.GetSelfRegisteredEmailUserToken(env, scopes, userId, partyId, partyUuid, email, ttl);
-
-            if (!string.IsNullOrEmpty(req.Query["dump"]))
-            {
-                return new OkObjectResult(tokenHelper.Dump(token));
-            }
-
-            return new OkObjectResult(token);
+            return new BadRequestObjectResult(requestValidator.GetErrors());
         }
+
+        var token = await tokenHelper.GetSelfRegisteredEmailUserToken(env, scopes, userId, partyId, partyUuid, email, ttl);
+
+        if (!string.IsNullOrEmpty(req.Query["dump"]))
+        {
+            return new OkObjectResult(tokenHelper.Dump(token));
+        }
+
+        return new OkObjectResult(token);
     }
 }
