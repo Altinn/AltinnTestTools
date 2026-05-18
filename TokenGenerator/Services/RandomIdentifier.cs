@@ -7,72 +7,49 @@ using TokenGenerator.Services.Interfaces;
 
 namespace TokenGenerator.Services;
 
-public class RandomIdentifier : IRandomIdentifier
+public class RandomIdentifier(ILogger<RandomIdentifier> logger) : IRandomIdentifier
 {
-    private readonly ILogger<RandomIdentifier> logger;
-    private string[] randomPersonalIdentifiers;
-    private string[] randomEnterpriseIdentifiers;
-    
-    public RandomIdentifier(ILogger<RandomIdentifier> logger)
-    {
-        this.logger = logger;
-        LoadData();
-    }
-    
+    private readonly string[] randomPersonalIdentifiers = LoadData("Data/endusers.txt", "personal", logger);
+    private readonly string[] randomEnterpriseIdentifiers = LoadData("Data/enterprises.txt", "enterprise", logger);
+
     public List<string> GetRandomPersonalIdentifiers(uint count)
     {
-        return Shuffle(randomPersonalIdentifiers).Take((int)count).ToList();
+        return [.. Shuffle(randomPersonalIdentifiers).Take((int)count)];
     }
 
     public List<string> GetRandomEnterpriseIdentifiers(uint count)
     {
-        return Shuffle(randomEnterpriseIdentifiers).Take((int)count).ToList();
+        return [.. Shuffle(randomEnterpriseIdentifiers).Take((int)count)];
     }
 
     private static string[] Shuffle(string[] array)
     {
-        Random random = new();
-        for (int i = array.Length - 1; i > 0; i--)
+        var shuffled = array.ToArray();
+        var random = new Random();
+        for (var i = shuffled.Length - 1; i > 0; i--)
         {
-            int j = random.Next(i + 1);
-            (array[i], array[j]) = (array[j], array[i]); // Swap
+            var j = random.Next(i + 1);
+            (shuffled[i], shuffled[j]) = (shuffled[j], shuffled[i]); // Swap
         }
 
-        return array;
+        return shuffled;
     }
 
-    private void LoadData()
+    private static string[] LoadData(string file, string identifierType, ILogger<RandomIdentifier> logger)
     {
         var basePathMaybe = "C:/home/site/wwwroot/";
-        var endusersFile = "Data/endusers.txt";
-        var enterprisesFile = "Data/enterprises.txt";
-        
-        if (File.Exists(basePathMaybe + endusersFile))
+
+        if (File.Exists(basePathMaybe + file))
         {
-            randomPersonalIdentifiers = File.ReadAllLines(basePathMaybe + endusersFile);
+            return File.ReadAllLines(basePathMaybe + file);
         }
-        else if (File.Exists(endusersFile))
+
+        if (File.Exists(file))
         {
-            randomPersonalIdentifiers = File.ReadAllLines(endusersFile);
+            return File.ReadAllLines(file);
         }
-        else
-        {
-            logger.LogWarning($"Could not find file with random personal identifiers at path: {basePathMaybe + endusersFile}");
-            randomPersonalIdentifiers = Array.Empty<string>();
-        }
-        
-        if (File.Exists(basePathMaybe + enterprisesFile))
-        {
-            randomEnterpriseIdentifiers = File.ReadAllLines(basePathMaybe + enterprisesFile);
-        }
-        else if (File.Exists(enterprisesFile))
-        {
-            randomEnterpriseIdentifiers = File.ReadAllLines(enterprisesFile);
-        }
-        else
-        {
-            logger.LogWarning($"Could not find file with random enterpise identifiers at path: {basePathMaybe + enterprisesFile}");
-            randomEnterpriseIdentifiers = Array.Empty<string>();
-        }
+
+        logger.LogWarning($"Could not find file with random {identifierType} identifiers at path: {basePathMaybe + file}");
+        return [];
     }
 }

@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
@@ -11,138 +11,135 @@ using System.Linq;
 using System.Net.Http;
 using System.Runtime.Serialization;
 using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using TokenGenerator.Services.Interfaces;
 
-namespace TokenGenerator.Services
+namespace TokenGenerator.Services;
+
+public class AuthorizationBearer(IOptions<Settings> settings, ILogger<AuthorizationBearer> logger) : IAuthorizationBearer
 {
-    public class AuthorizationBearer : IAuthorizationBearer
+    private static readonly HttpClient ConfigurationHttpClient = new() { Timeout = TimeSpan.FromMilliseconds(10000) };
+    private readonly Settings settings = settings.Value;
+    private readonly Lock cmLockMaskinporten = new();
+
+    private ConfigurationManager<OpenIdConnectConfiguration> ConfigurationManager
     {
-        private readonly Settings settings;
-        private readonly object cmLockMaskinporten = new object();
-        private ConfigurationManager<OpenIdConnectConfiguration> configurationManager;
-        private readonly HttpContext httpContext;
-
-        private ConfigurationManager<OpenIdConnectConfiguration> ConfigurationManager
+        get
         {
-            get
+            if (field != null) return field;
+            lock (cmLockMaskinporten)
             {
-                if (configurationManager != null) return configurationManager;
-                lock (cmLockMaskinporten)
-                {
-                    configurationManager ??= new ConfigurationManager<OpenIdConnectConfiguration>(
-                        settings.TokenAuthorizationWellKnownEndpoint,
-                        new OpenIdConnectConfigurationRetriever(),
-                        new HttpClient {Timeout = TimeSpan.FromMilliseconds(10000)});
-                }
-
-                return configurationManager;
+                field ??= new ConfigurationManager<OpenIdConnectConfiguration>(
+                    settings.TokenAuthorizationWellKnownEndpoint,
+                    new OpenIdConnectConfigurationRetriever(),
+                    ConfigurationHttpClient);
             }
-        }
 
-        public AuthorizationBearer(IOptions<Settings> settings, IHttpContextAccessor contextAccessor)
-        {
-            this.settings = settings.Value;
-            this.httpContext = contextAccessor.HttpContext;
+            return field;
         }
+    }
 
-        public async Task<ActionResult> IsAuthorized(string authorizationString, string requiredScope)
+    public async Task<ActionResult> IsAuthorized(string authorizationString, string requiredScope, HttpContext httpContext)
+    {
+        try
         {
-            try
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var jwtToken = (JwtSecurityToken)tokenHandler.ReadToken(authorizationString);
+
+            if (jwtToken.SignatureAlgorithm != SecurityAlgorithms.RsaSha256)
             {
-                IdentityModelEventSource.ShowPII = true;
-                JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
-                JwtSecurityToken jwtToken = (JwtSecurityToken)tokenHandler.ReadToken(authorizationString);
+                return new BadRequestObjectResult("Expected RsaSha256 signature");
+            }
 
-                if (jwtToken.SignatureAlgorithm != SecurityAlgorithms.RsaSha256)
-                {
-                    return new BadRequestObjectResult("Expected RsaSha256 signature");
-                }
+            var configuration = await ConfigurationManager.GetConfigurationAsync();
+            var signingKeys = new List<SecurityKey>();
+            signingKeys.AddRange(configuration.SigningKeys);
 
-                OpenIdConnectConfiguration configuration = await ConfigurationManager.GetConfigurationAsync();
-                var signingKeys = new List<SecurityKey>();
-                signingKeys.AddRange(configuration.SigningKeys);
+            var parameters = new TokenValidationParameters()
+            {
+                RequireExpirationTime = true,
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                IssuerSigningKeys = signingKeys,
+                ValidateIssuerSigningKey = true,
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.FromSeconds(1)
+            };
 
-                TokenValidationParameters parameters = new TokenValidationParameters()
-                {
-                    RequireExpirationTime = true,
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
-                    IssuerSigningKeys = signingKeys,
-                    ValidateIssuerSigningKey = true,
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.FromSeconds(1)
-                };
+            var principal = tokenHandler.ValidateToken(authorizationString, parameters, out var _);
 
-                ClaimsPrincipal principal = tokenHandler.ValidateToken(authorizationString, parameters, out SecurityToken _);
-
-                Claim scopeClaim = principal.Claims.FirstOrDefault(x => x.Type == "scope");
-                if (scopeClaim == null) 
-                {
-                    return new UnauthorizedObjectResult("Missing required scope: " + requiredScope) { StatusCode = 403 };
-                }
-
-                string[] scopes = scopeClaim.Value.Split(' ');
-                
-                // Do a substring match, eg. having "altinn:testtools/tokengenerator" should satisfy a requirement for "altinn:testtools/tokengenerator/personal"
-                if (scopes.Any(requiredScope.Contains))
-                {
-                    Claim consumerClaim = principal.Claims.FirstOrDefault(x => x.Type == "consumer");
-
-                    httpContext.Items["AuthenticatedParty"] = consumerClaim == null ? "unknown" : GetOrganizationNumberFromClaimValue(consumerClaim.Value);
-                    return null;
-                }
-                    
+            var scopeClaim = principal.Claims.FirstOrDefault(x => x.Type == "scope");
+            if (scopeClaim == null)
+            {
                 return new UnauthorizedObjectResult("Missing required scope: " + requiredScope) { StatusCode = 403 };
-
             }
-            catch (Exception e)
+
+            var scopes = scopeClaim.Value.Split(' ');
+
+            // Allow either an exact scope match or a parent scope match on a '/' boundary,
+            // eg. having "altinn:testtools/tokengenerator" should satisfy a requirement for
+            // "altinn:testtools/tokengenerator/personal", but unrelated substrings must not match.
+            if (scopes.Any(scope =>
+                    string.Equals(requiredScope, scope, StringComparison.Ordinal) ||
+                    requiredScope.StartsWith(scope + "/", StringComparison.Ordinal)))
             {
-                return new UnauthorizedObjectResult(e.Message) { StatusCode = 403 };
-            }
-        }
+                var consumerClaim = principal.Claims.FirstOrDefault(x => x.Type == "consumer");
 
-        private static string GetOrganizationNumberFromClaimValue(string rawClaimValue)
+                httpContext.Items["AuthenticatedParty"] = consumerClaim == null ? "unknown" : GetOrganizationNumberFromClaimValue(consumerClaim.Value);
+                return null;
+            }
+
+            return new UnauthorizedObjectResult("Missing required scope: " + requiredScope) { StatusCode = 403 };
+
+        }
+        catch (Exception e)
         {
-            ConsumerClaim consumerClaim;
-            try
-            {
-                consumerClaim = JsonConvert.DeserializeObject<ConsumerClaim>(rawClaimValue);
-            }
-            catch (JsonReaderException)
-            {
-                throw new ArgumentException("Invalid consumer claim: invalid JSON");
-            }
-
-            if (consumerClaim.Authority != "iso6523-actorid-upis")
-            {
-                throw new ArgumentException("Invalid consumer claim: unexpected authority");
-            }
-
-            string[] identityParts = consumerClaim.Id.Split(':');
-            if (identityParts[0] != "0192")
-            {
-                throw new ArgumentException("Invalid consumer claim: unexpected ISO6523 identifier");
-            }
-
-            return identityParts[1];
+            logger.LogWarning(e, "Bearer authorization failed");
+            return new UnauthorizedObjectResult("Invalid bearer token") { StatusCode = 403 };
         }
     }
 
-    internal sealed class ConsumerClaim
+    private static string GetOrganizationNumberFromClaimValue(string rawClaimValue)
     {
-        /// <summary>
-        /// Gets or sets the format of the identifier. Must always be "iso6523-actorid-upis"
-        /// </summary>
-        [DataMember(Name = "authority")]
-        public string Authority { get; set; }
+        ConsumerClaim consumerClaim;
+        try
+        {
+            consumerClaim = JsonConvert.DeserializeObject<ConsumerClaim>(rawClaimValue);
+        }
+        catch (JsonReaderException)
+        {
+            throw new ArgumentException("Invalid consumer claim: invalid JSON");
+        }
 
-        /// <summary>
-        /// Gets or sets the identifier for the consumer. Must have ISO6523 prefix, which should be "0192:" for norwegian organization numbers
-        /// </summary>
-        [DataMember(Name = "ID")]
-        public string Id { get; set; }
+        if (consumerClaim.Authority != "iso6523-actorid-upis")
+        {
+            throw new ArgumentException("Invalid consumer claim: unexpected authority");
+        }
+
+        var identityParts = consumerClaim.Id.Split(':');
+        if (identityParts[0] != "0192")
+        {
+            throw new ArgumentException("Invalid consumer claim: unexpected ISO6523 identifier");
+        }
+
+        return identityParts[1];
     }
+}
+
+internal sealed class ConsumerClaim
+{
+    /// <summary>
+    /// Gets or sets the format of the identifier. Must always be "iso6523-actorid-upis"
+    /// </summary>
+    [DataMember(Name = "authority")]
+    public string Authority { get; set; }
+
+    /// <summary>
+    /// Gets or sets the identifier for the consumer. Must have ISO6523 prefix, which should be "0192:" for norwegian organization numbers
+    /// </summary>
+    [DataMember(Name = "ID")]
+    public string Id { get; set; }
 }

@@ -2,22 +2,15 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.Azure.Functions.Worker;
 using Newtonsoft.Json;
 using TokenGenerator.Services.Interfaces;
 
-public class WellKnownJwks
+public class WellKnownJwks(IIssuer issuer)
 {
-    private readonly IIssuer issuer;
-    private JsonSerializerSettings jsonSettings = new() { NullValueHandling = NullValueHandling.Ignore };
+    private readonly JsonSerializerSettings jsonSettings = new() { NullValueHandling = NullValueHandling.Ignore };
 
-    public WellKnownJwks(IIssuer issuer)
-    {
-        this.issuer = issuer;
-    }
-
-    [FunctionName("OpenIdConfiguration")]
+    [Function("OpenIdConfiguration")]
     public Task<IActionResult> GetOpenIdConfiguration(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = ".well-known/oauth-authorization-server")] HttpRequest req)
     {
@@ -37,9 +30,9 @@ public class WellKnownJwks
         });
     }
 
-    [FunctionName("JwksJson")]
+    [Function("JwksJson")]
     public Task<IActionResult> GetJwks(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = ".well-known/jwks.json")] HttpRequest req)
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = ".well-known/jwks.json")] HttpRequest _)
     {
         var jwks = new
         {

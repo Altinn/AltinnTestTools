@@ -1,10 +1,10 @@
 ﻿using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace TokenGenerator.Services.Interfaces
+namespace TokenGenerator.Services.Interfaces;
+
+public interface IAuthorizationMethod
 {
-    public interface IAuthorizationMethod
-    {
-        Task<ActionResult> IsAuthorized(string authorizationString, string requiredScope);
-    }
+    Task<ActionResult> IsAuthorized(string authorizationString, string requiredScope, HttpContext httpContext);
 }

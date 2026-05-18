@@ -5,60 +5,54 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using TokenGenerator.Services.Interfaces;
 
-namespace TokenGenerator.Services
+namespace TokenGenerator.Services;
+
+public class Authorization(ILogger<Authorization> logger) : IAuthorization
 {
-    public class Authorization : IAuthorization
+    public async Task<ActionResult> Authorize(string requiredScope, HttpRequest req)
     {
-        private readonly ILogger<Authorization> logger;
-        private readonly HttpContext ctx;
-
-        public Authorization(IHttpContextAccessor contextAccessor, ILogger<Authorization> logger)
+        var ctx = req.HttpContext;
+        if (!ctx.Request.Headers.TryGetValue("Authorization", out var value))
         {
-            this.logger = logger;
-            ctx = contextAccessor.HttpContext;
+            return new BasicAuthenticationRequestResult();
         }
 
-        public async Task<ActionResult> Authorize(string requiredScope)
+        var parts = value.ToString().Split(' ', 2);
+        if (parts.Length != 2 || string.IsNullOrWhiteSpace(parts[1]))
         {
-            if (!ctx.Request.Headers.ContainsKey("Authorization"))
-            {
-                return new BasicAuthenticationRequestResult();
-            }
-
-            string[] parts = ctx.Request.Headers["Authorization"].ToString().Split(' ', 2);
-            IAuthorizationMethod handler = null;
-            switch (parts[0].ToLower())
-            {
-                case "basic":
-                    handler = ctx.RequestServices.GetService<IAuthorizationBasic>();
-                    break;
-                case "bearer":
-                    handler = ctx.RequestServices.GetService<IAuthorizationBearer>();
-                    break;
-            }
-
-            if (handler == null)
-            {
-                return new BasicAuthenticationRequestResult();
-            }
-
-            ActionResult result = await handler.IsAuthorized(parts[1], requiredScope);
-            if (result == null)
-            {
-                // Successfully authenticated, log who did this
-                logger.LogInformation("Authenticated call by '{party}' to '{endpoint}' with parameters '{query}'", ctx.Items["AuthenticatedParty"], ctx.Request.Path.ToString(), ctx.Request.QueryString.ToString());
-            }
-
-            return result;
+            return new BasicAuthenticationRequestResult();
         }
+
+        IAuthorizationMethod handler = parts[0].ToLower() switch
+        {
+            "basic" => ctx.RequestServices.GetService<IAuthorizationBasic>(),
+            "bearer" => ctx.RequestServices.GetService<IAuthorizationBearer>(),
+            _ => null
+        };
+
+        if (handler == null)
+        {
+            return new BasicAuthenticationRequestResult();
+        }
+
+        var result = await handler.IsAuthorized(parts[1], requiredScope, ctx);
+        if (result == null)
+        {
+            // Successfully authenticated, log who did this
+            logger.LogInformation("Authenticated call by '{party}' for required scope '{requiredScope}'",
+                ctx.Items["AuthenticatedParty"],
+                requiredScope);
+        }
+
+        return result;
     }
+}
 
-    internal class BasicAuthenticationRequestResult : UnauthorizedResult 
+internal class BasicAuthenticationRequestResult : UnauthorizedResult
+{
+    public override void ExecuteResult(ActionContext context)
     {
-        public override void ExecuteResult(ActionContext context)
-        {
-            base.ExecuteResult(context);
-            context.HttpContext.Response.Headers.Add("WWW-Authenticate", "Basic realm=\"AltinnTestTools - TokenGenerator\"");
-        }
+        base.ExecuteResult(context);
+        context.HttpContext.Response.Headers["WWW-Authenticate"] = "Basic realm=\"AltinnTestTools - TokenGenerator\"";
     }
 }

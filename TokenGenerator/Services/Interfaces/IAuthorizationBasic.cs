@@ -1,6 +1,5 @@
-﻿namespace TokenGenerator.Services.Interfaces
+﻿namespace TokenGenerator.Services.Interfaces;
+
+public interface IAuthorizationBasic : IAuthorizationMethod
 {
-    public interface IAuthorizationBasic : IAuthorizationMethod
-    {
-    }
 }

@@ -6,58 +6,51 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using TokenGenerator.Services.Interfaces;
 
-namespace TokenGenerator.Services
+namespace TokenGenerator.Services;
+
+public class AuthorizationBasic(IOptions<Settings> settings) : IAuthorizationBasic
 {
-    public class AuthorizationBasic : IAuthorizationBasic
+    private readonly Settings settings = settings.Value;
+
+    public async Task<ActionResult> IsAuthorized(string authorizationString, string _, HttpContext httpContext)
     {
-        private readonly Settings settings;
-        private readonly HttpContext httpContext;
-
-        public AuthorizationBasic(IOptions<Settings> settings, IHttpContextAccessor contextAccessor)
+        if (!ParseUserNamePassword(authorizationString, out var userName, out var password))
         {
-            this.settings = settings.Value;
-            this.httpContext = contextAccessor.HttpContext;
+            return new BadRequestResult();
         }
 
-        public async Task<ActionResult> IsAuthorized(string authorizationString, string _)
+        if (!IsUserAuthorized(userName, password))
         {
-            if (!ParseUserNamePassword(authorizationString, out string userName, out string password))
-            {
-                return new BadRequestResult();
-            }
-
-            if (!IsUserAuthorized(userName, password)) {
-                return new BasicAuthenticationRequestResult();
-            }
-
-            httpContext.Items["AuthenticatedParty"] = userName;
-
-            return await Task.FromResult<ActionResult>(null);
+            return new BasicAuthenticationRequestResult();
         }
 
-        private bool ParseUserNamePassword(string rawInput, out string userName, out string password)
-        {
-            userName = null;
-            password = null;
-            try
-            {
-                string[] parts = Encoding.UTF8.GetString(
-                    // Add padding if missing
-                    Convert.FromBase64String(rawInput + new string('=', (4 - rawInput.Length % 4) % 4))).Split(':', 2);
-                userName = parts[0];
-                password = parts[1];
+        httpContext.Items["AuthenticatedParty"] = userName;
 
-                return true;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
+        return await Task.FromResult<ActionResult>(null);
+    }
 
-        private bool IsUserAuthorized(string userName, string password)
+    private static bool ParseUserNamePassword(string rawInput, out string userName, out string password)
+    {
+        userName = null;
+        password = null;
+        try
         {
-            return settings.BasicAuthorizationUsersDict.ContainsKey(userName) && string.Equals(settings.BasicAuthorizationUsersDict[userName], password);
+            var parts = Encoding.UTF8.GetString(
+                // Add padding if missing
+                Convert.FromBase64String(rawInput + new string('=', (4 - rawInput.Length % 4) % 4))).Split(':', 2);
+            userName = parts[0];
+            password = parts[1];
+
+            return true;
         }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    private bool IsUserAuthorized(string userName, string password)
+    {
+        return settings.BasicAuthorizationUsersDict.ContainsKey(userName) && string.Equals(settings.BasicAuthorizationUsersDict[userName], password);
     }
 }
