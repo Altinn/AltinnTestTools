@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
@@ -18,8 +19,9 @@ using TokenGenerator.Services.Interfaces;
 
 namespace TokenGenerator.Services;
 
-public class AuthorizationBearer(IOptions<Settings> settings) : IAuthorizationBearer
+public class AuthorizationBearer(IOptions<Settings> settings, ILogger<AuthorizationBearer> logger) : IAuthorizationBearer
 {
+    private static readonly HttpClient ConfigurationHttpClient = new() { Timeout = TimeSpan.FromMilliseconds(10000) };
     private readonly Settings settings = settings.Value;
     private readonly Lock cmLockMaskinporten = new();
 
@@ -33,7 +35,7 @@ public class AuthorizationBearer(IOptions<Settings> settings) : IAuthorizationBe
                 field ??= new ConfigurationManager<OpenIdConnectConfiguration>(
                     settings.TokenAuthorizationWellKnownEndpoint,
                     new OpenIdConnectConfigurationRetriever(),
-                    new HttpClient { Timeout = TimeSpan.FromMilliseconds(10000) });
+                    ConfigurationHttpClient);
             }
 
             return field;
@@ -91,7 +93,8 @@ public class AuthorizationBearer(IOptions<Settings> settings) : IAuthorizationBe
         }
         catch (Exception e)
         {
-            return new UnauthorizedObjectResult(e.Message) { StatusCode = 403 };
+            logger.LogWarning(e, "Bearer authorization failed");
+            return new UnauthorizedObjectResult("Invalid bearer token") { StatusCode = 403 };
         }
     }
 

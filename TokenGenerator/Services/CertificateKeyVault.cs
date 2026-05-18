@@ -34,7 +34,7 @@ public class CertificateKeyVault(IOptions<Settings> settings) : ICertificateServ
 
         var certs = await GetCertificates(keyVaultName, certificateName);
 
-        return GetLatestCertificateWithRolloverDelay(certs, 1);
+        return GetLatestCertificateWithRolloverDelay(certs, keyVaultName, certificateName, 1);
     }
 
     public async Task<X509Certificate2> GetConsentTokenSigningCertificate(string environment)
@@ -49,17 +49,19 @@ public class CertificateKeyVault(IOptions<Settings> settings) : ICertificateServ
 
         var certs = await GetCertificates(keyVaultName, certificateName);
 
-        return GetLatestCertificateWithRolloverDelay(certs, 1);
+        return GetLatestCertificateWithRolloverDelay(certs, keyVaultName, certificateName, 1);
     }
 
     public async Task<X509Certificate2> GetPlatformAccessTokenSigningCertificate(string environment, string issuer)
     {
         List<X509Certificate2> certs;
+        string keyVaultName;
+        string certificateName;
         if (issuer == settings.PlatformAccessTokenIssuerName)
         {
             if (string.IsNullOrEmpty(environment) ||
-                !settings.EnvironmentsApiTokenDict.TryGetValue(environment, out var keyVaultName) ||
-                !settings.PlatformAccessTokenSigningCertNamesDict.TryGetValue(environment, out var certificateName))
+                !settings.EnvironmentsApiTokenDict.TryGetValue(environment, out keyVaultName) ||
+                !settings.PlatformAccessTokenSigningCertNamesDict.TryGetValue(environment, out certificateName))
             {
                 throw new ArgumentException("Invalid environment");
             }
@@ -69,8 +71,8 @@ public class CertificateKeyVault(IOptions<Settings> settings) : ICertificateServ
         else if (issuer == settings.TtdAccessTokenIssuerName)
         {
             if (string.IsNullOrEmpty(environment) ||
-                !settings.EnvironmentsTtdAccessTokenDict.TryGetValue(environment, out var keyVaultName) ||
-                !settings.TtdAccessTokenSigningCertNamesDict.TryGetValue(environment, out var certificateName))
+                !settings.EnvironmentsTtdAccessTokenDict.TryGetValue(environment, out keyVaultName) ||
+                !settings.TtdAccessTokenSigningCertNamesDict.TryGetValue(environment, out certificateName))
             {
                 throw new ArgumentException("Invalid environment or org issuer");
             }
@@ -82,7 +84,7 @@ public class CertificateKeyVault(IOptions<Settings> settings) : ICertificateServ
             throw new ArgumentException("Invalid issuer");
         }
 
-        return GetLatestCertificateWithRolloverDelay(certs, 1);
+        return GetLatestCertificateWithRolloverDelay(certs, keyVaultName, certificateName, 1);
     }
 
     private async Task<List<X509Certificate2>> GetCertificates(string keyVaultName, string certificateName)
@@ -156,8 +158,16 @@ public class CertificateKeyVault(IOptions<Settings> settings) : ICertificateServ
     }
 
     private static X509Certificate2 GetLatestCertificateWithRolloverDelay(
-        List<X509Certificate2> certs, int rolloverDelayHours)
+        List<X509Certificate2> certs,
+        string keyVaultName,
+        string certificateName,
+        int rolloverDelayHours)
     {
+        if (certs.Count == 0)
+        {
+            throw new InvalidOperationException($"No usable certificate versions found for '{certificateName}' in Key Vault '{keyVaultName}'.");
+        }
+
         // First limit the search to just those certificates that have existed longer than the rollover delay.
         var rolloverCutoff = DateTime.UtcNow.AddHours(-rolloverDelayHours);
         var potentialCerts =
@@ -169,10 +179,15 @@ public class CertificateKeyVault(IOptions<Settings> settings) : ICertificateServ
             potentialCerts = [.. certs.Where(c => c.NotBefore.ToUniversalTime() < DateTime.UtcNow)];
         }
 
+        if (potentialCerts.Count == 0)
+        {
+            throw new InvalidOperationException($"No active certificate versions found for '{certificateName}' in Key Vault '{keyVaultName}'.");
+        }
+
         // Of the potential certs, return the newest one.
         return potentialCerts
             .OrderByDescending(c => c.NotBefore)
-            .FirstOrDefault();
+            .First();
     }
 
     private static SecretClient GetSecretClient(string keyVaultName)

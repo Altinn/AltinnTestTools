@@ -24,14 +24,15 @@ public class RandomIdentifier(ILogger<RandomIdentifier> logger) : IRandomIdentif
 
     private static string[] Shuffle(string[] array)
     {
+        var shuffled = array.ToArray();
         var random = new Random();
-        for (var i = array.Length - 1; i > 0; i--)
+        for (var i = shuffled.Length - 1; i > 0; i--)
         {
             var j = random.Next(i + 1);
-            (array[i], array[j]) = (array[j], array[i]); // Swap
+            (shuffled[i], shuffled[j]) = (shuffled[j], shuffled[i]); // Swap
         }
 
-        return array;
+        return shuffled;
     }
 
     private static string[] LoadData(string file, string identifierType, ILogger<RandomIdentifier> logger)
