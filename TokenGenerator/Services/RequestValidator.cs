@@ -10,7 +10,7 @@ public class RequestValidator : IRequestValidator
     private HttpRequest req;
 
     private const string MandatoryIsMissing = "Parameter must be supplied";
-    private const string FailedValidation = "Parameter was supplied with a invalid value";
+    private const string FailedValidation = "Parameter was supplied with an invalid value";
     private readonly Dictionary<string, string> errors = [];
 
     public delegate T ValidatorParser<in TIn, TOut, out T>(TIn input, out TOut output);

@@ -217,7 +217,7 @@ public class Token(IOptions<Settings> settings, ICertificateService certificateH
         var signingCertificate = await certificateHelper.GetConsentTokenSigningCertificate(env);
         if (signingCertificate?.Thumbprint == null)
         {
-            throw new ArgumentNullException($"GetApiTokenSigningCertificate({env}) returned null");
+            throw new ArgumentNullException($"GetConsentTokenSigningCertificate({env}) returned null");
         }
 
         var securityKey = new X509SecurityKey(signingCertificate);
