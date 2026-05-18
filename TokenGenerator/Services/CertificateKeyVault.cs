@@ -25,13 +25,14 @@ public class CertificateKeyVault(IOptions<Settings> settings) : ICertificateServ
 
     public async Task<X509Certificate2> GetApiTokenSigningCertificate(string environment)
     {
-        if (string.IsNullOrEmpty(environment) || settings.EnvironmentsApiTokenDict[environment] == null || settings.ApiTokenSigningCertNamesDict[environment] == null)
+        if (string.IsNullOrEmpty(environment) ||
+            !settings.EnvironmentsApiTokenDict.TryGetValue(environment, out var keyVaultName) ||
+            !settings.ApiTokenSigningCertNamesDict.TryGetValue(environment, out var certificateName))
         {
             throw new ArgumentException("Invalid environment");
         }
 
-        var certs = await GetCertificates(settings.EnvironmentsApiTokenDict[environment],
-            settings.ApiTokenSigningCertNamesDict[environment]);
+        var certs = await GetCertificates(keyVaultName, certificateName);
 
         return GetLatestCertificateWithRolloverDelay(certs, 1);
     }
@@ -39,12 +40,14 @@ public class CertificateKeyVault(IOptions<Settings> settings) : ICertificateServ
     public async Task<X509Certificate2> GetConsentTokenSigningCertificate(string environment)
     {
 
-        if (string.IsNullOrEmpty(environment) || settings.EnvironmentsConsentTokenDict[environment] == null || settings.ConsentTokenSigningCertNamesDict[environment] == null)
+        if (string.IsNullOrEmpty(environment) ||
+            !settings.EnvironmentsConsentTokenDict.TryGetValue(environment, out var keyVaultName) ||
+            !settings.ConsentTokenSigningCertNamesDict.TryGetValue(environment, out var certificateName))
         {
             throw new ArgumentException("Invalid environment");
         }
-        var certs = await GetCertificates(settings.EnvironmentsConsentTokenDict[environment],
-            settings.ConsentTokenSigningCertNamesDict[environment]);
+
+        var certs = await GetCertificates(keyVaultName, certificateName);
 
         return GetLatestCertificateWithRolloverDelay(certs, 1);
     }
@@ -54,21 +57,25 @@ public class CertificateKeyVault(IOptions<Settings> settings) : ICertificateServ
         List<X509Certificate2> certs;
         if (issuer == settings.PlatformAccessTokenIssuerName)
         {
-            if (string.IsNullOrEmpty(environment) || settings.EnvironmentsApiTokenDict[environment] == null || settings.PlatformAccessTokenSigningCertNamesDict[environment] == null)
+            if (string.IsNullOrEmpty(environment) ||
+                !settings.EnvironmentsApiTokenDict.TryGetValue(environment, out var keyVaultName) ||
+                !settings.PlatformAccessTokenSigningCertNamesDict.TryGetValue(environment, out var certificateName))
             {
                 throw new ArgumentException("Invalid environment");
             }
 
-            certs = await GetCertificates(settings.EnvironmentsApiTokenDict[environment], settings.PlatformAccessTokenSigningCertNamesDict[environment]);
+            certs = await GetCertificates(keyVaultName, certificateName);
         }
         else if (issuer == settings.TtdAccessTokenIssuerName)
         {
-            if (string.IsNullOrEmpty(issuer) || settings.EnvironmentsTtdAccessTokenDict[environment] == null || settings.TtdAccessTokenSigningCertNamesDict[environment] == null)
+            if (string.IsNullOrEmpty(environment) ||
+                !settings.EnvironmentsTtdAccessTokenDict.TryGetValue(environment, out var keyVaultName) ||
+                !settings.TtdAccessTokenSigningCertNamesDict.TryGetValue(environment, out var certificateName))
             {
                 throw new ArgumentException("Invalid environment or org issuer");
             }
 
-            certs = await GetCertificates(settings.EnvironmentsTtdAccessTokenDict[environment], settings.TtdAccessTokenSigningCertNamesDict[environment]);
+            certs = await GetCertificates(keyVaultName, certificateName);
         }
         else
         {
@@ -86,7 +93,7 @@ public class CertificateKeyVault(IOptions<Settings> settings) : ICertificateServ
 
         try
         {
-            if (certificateUpdateTime > DateTime.Now && certificates.ContainsKey(cacheKey) &&
+            if (certificateUpdateTime > DateTime.UtcNow && certificates.ContainsKey(cacheKey) &&
                 certificates[cacheKey].Count > 0)
             {
                 return certificates[cacheKey];
@@ -95,7 +102,7 @@ public class CertificateKeyVault(IOptions<Settings> settings) : ICertificateServ
             certificates[cacheKey] = await GetAllCertificateVersions(keyVaultName, certificateName);
 
             // Reuse the same list of certificates for 1 hour.
-            certificateUpdateTime = DateTime.Now.AddHours(1);
+            certificateUpdateTime = DateTime.UtcNow.AddHours(1);
 
             certificates[cacheKey] =
                 [.. certificates[cacheKey].OrderByDescending(cer => cer.NotBefore)];
@@ -152,14 +159,14 @@ public class CertificateKeyVault(IOptions<Settings> settings) : ICertificateServ
         List<X509Certificate2> certs, int rolloverDelayHours)
     {
         // First limit the search to just those certificates that have existed longer than the rollover delay.
-        var rolloverCutoff = DateTime.Now.AddHours(-rolloverDelayHours);
+        var rolloverCutoff = DateTime.UtcNow.AddHours(-rolloverDelayHours);
         var potentialCerts =
-            certs.Where(c => c.NotBefore < rolloverCutoff).ToList();
+            certs.Where(c => c.NotBefore.ToUniversalTime() < rolloverCutoff).ToList();
 
         // If no certs could be found, then widen the search to any usable certificate.
         if (!potentialCerts.Any())
         {
-            potentialCerts = [.. certs.Where(c => c.NotBefore < DateTime.Now)];
+            potentialCerts = [.. certs.Where(c => c.NotBefore.ToUniversalTime() < DateTime.UtcNow)];
         }
 
         // Of the potential certs, return the newest one.

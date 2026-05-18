@@ -10,7 +10,7 @@ namespace TokenGenerator.Services;
 public class RandomIdentifier(ILogger<RandomIdentifier> logger) : IRandomIdentifier
 {
     private readonly string[] randomPersonalIdentifiers = LoadData("Data/endusers.txt", "personal", logger);
-    private readonly string[] randomEnterpriseIdentifiers = LoadData("Data/enterprises.txt", "enterpise", logger);
+    private readonly string[] randomEnterpriseIdentifiers = LoadData("Data/enterprises.txt", "enterprise", logger);
 
     public List<string> GetRandomPersonalIdentifiers(uint count)
     {

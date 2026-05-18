@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
@@ -45,7 +44,6 @@ public class AuthorizationBearer(IOptions<Settings> settings) : IAuthorizationBe
     {
         try
         {
-            IdentityModelEventSource.ShowPII = true;
             var tokenHandler = new JwtSecurityTokenHandler();
             var jwtToken = (JwtSecurityToken)tokenHandler.ReadToken(authorizationString);
 

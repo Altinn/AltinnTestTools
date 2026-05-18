@@ -18,6 +18,11 @@ public class Authorization(ILogger<Authorization> logger) : IAuthorization
         }
 
         var parts = value.ToString().Split(' ', 2);
+        if (parts.Length != 2 || string.IsNullOrWhiteSpace(parts[1]))
+        {
+            return new BasicAuthenticationRequestResult();
+        }
+
         IAuthorizationMethod handler = parts[0].ToLower() switch
         {
             "basic" => ctx.RequestServices.GetService<IAuthorizationBasic>(),
@@ -34,7 +39,9 @@ public class Authorization(ILogger<Authorization> logger) : IAuthorization
         if (result == null)
         {
             // Successfully authenticated, log who did this
-            logger.LogInformation("Authenticated call by '{party}' to '{endpoint}' with parameters '{query}'", ctx.Items["AuthenticatedParty"], ctx.Request.Path.ToString(), ctx.Request.QueryString.ToString());
+            logger.LogInformation("Authenticated call by '{party}' for required scope '{requiredScope}'",
+                ctx.Items["AuthenticatedParty"],
+                requiredScope);
         }
 
         return result;

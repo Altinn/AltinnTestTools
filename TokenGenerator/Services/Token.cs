@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -24,7 +25,6 @@ public class Token(IOptions<Settings> settings, ICertificateService certificateH
     private readonly Settings settings = settings.Value;
     private const string ValidScopeListRegex = @"^[a-z0-9:/_\-,\. ]+$";
     private readonly ConcurrentDictionary<string, JwtHeader> jwtHeaderCache = new();
-    private readonly Random random = new();
 
     public async Task<string> GetEnterpriseToken(HttpRequest req, string env, string[] scopes, string org, string orgNo, string supplierOrgNo, uint ttl, string delegationSource, string clientId)
     {
@@ -283,7 +283,7 @@ public class Token(IOptions<Settings> settings, ICertificateService certificateH
     }
 
     /// <summary>
-    /// Generates a "propper" AccessToken token and signing it with the same platform access token certificate.
+    /// Generates a "proper" AccessToken token and signing it with the same platform access token certificate.
     /// </summary>
     /// <remarks>The issuer is hard coded to <c>platform</c>. The value is used by AccessTokenHandler to identify
     /// correct public key when validating the token signature.</remarks>
@@ -492,7 +492,7 @@ public class Token(IOptions<Settings> settings, ICertificateService certificateH
         string[] base64Parts = [.. token.Split('.').Take(2)];
         string[] jsonparts = [.. base64Parts.Select(x =>
             Encoding.ASCII.GetString(
-                Convert.FromBase64String(x + new string('=', (4 - x.Length % 4) % 4))
+                Base64UrlEncoder.DecodeBytes(x)
             )
         )];
 
@@ -537,7 +537,7 @@ public class Token(IOptions<Settings> settings, ICertificateService certificateH
     private string RandomString(int length)
     {
         const string chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-";
-        return new string([.. Enumerable.Repeat(chars, length).Select(s => s[random.Next(s.Length)])]);
+        return RandomNumberGenerator.GetString(chars, length);
     }
 
     private static Dictionary<string, string> GetOrgNoObject(string orgNo)
