@@ -79,8 +79,12 @@ public class AuthorizationBearer(IOptions<Settings> settings, ILogger<Authorizat
 
             var scopes = scopeClaim.Value.Split(' ');
 
-            // Do a substring match, eg. having "altinn:testtools/tokengenerator" should satisfy a requirement for "altinn:testtools/tokengenerator/personal"
-            if (scopes.Any(requiredScope.Contains))
+            // Allow either an exact scope match or a parent scope match on a '/' boundary,
+            // eg. having "altinn:testtools/tokengenerator" should satisfy a requirement for
+            // "altinn:testtools/tokengenerator/personal", but unrelated substrings must not match.
+            if (scopes.Any(scope =>
+                    string.Equals(requiredScope, scope, StringComparison.Ordinal) ||
+                    requiredScope.StartsWith(scope + "/", StringComparison.Ordinal)))
             {
                 var consumerClaim = principal.Claims.FirstOrDefault(x => x.Type == "consumer");
 
